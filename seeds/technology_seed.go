@@ -9,7 +9,7 @@ import (
 )
 
 func SeedTechnologies() {
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 10; i++ {
 		var tech models.Technology
 		if err := faker.FakeData(&tech); err != nil {
 			fmt.Printf("❌ Failed to generate technology: %v\n", err)
