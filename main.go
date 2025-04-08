@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rogersovich/go-portofolio-v4/config"
+	"github.com/rogersovich/go-portofolio-v4/routes"
+	"github.com/rogersovich/go-portofolio-v4/utils"
 )
 
 func main() {
@@ -16,10 +19,11 @@ func main() {
 
 	r := gin.Default()
 
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": fmt.Sprintf("Welcome to %s!", config.Config.Name),
-		})
+	// Init Routes
+	routes.RegisterTechnologyRoutes(r)
+
+	r.NoRoute(func(c *gin.Context) {
+		utils.Error(c, http.StatusNotFound, "Route not found")
 	})
 
 	r.Run(fmt.Sprintf(":%d", config.Config.Port))
