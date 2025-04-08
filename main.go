@@ -11,21 +11,16 @@ func main() {
 	// Init Viper Config
 	config.InitConfig()
 
-	// Set Gin mode
-	if config.Config.Debug {
-		gin.SetMode(gin.DebugMode)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
-	}
+	// Init DB
+	config.ConnectDB()
 
 	r := gin.Default()
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"data": "Hellow world roger",
+			"message": fmt.Sprintf("Welcome to %s!", config.Config.Name),
 		})
 	})
 
-	port := fmt.Sprintf(":%d", config.Config.Port)
-	r.Run(port) // listen and serve
+	r.Run(fmt.Sprintf(":%d", config.Config.Port))
 }

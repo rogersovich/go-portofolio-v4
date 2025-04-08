@@ -33,3 +33,8 @@ Thumbs.db
 
 # Air binary if built inside project (optional)
 air
+
+.env
+.env.production
+
+config.yaml
