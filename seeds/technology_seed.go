@@ -19,8 +19,6 @@ func SeedTechnologies() {
 		// Optionally control some fields manually
 		tech.IsMajor = (i%2 == 0)
 
-		fmt.Println(tech.ID)
-
 		if err := config.DB.Create(&tech).Error; err != nil {
 			fmt.Printf("❌ Failed to seed technology: %v\n", err)
 		} else {
