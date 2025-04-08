@@ -27,16 +27,24 @@ func InitConfig() {
 	viper.AddConfigPath(".") // root path
 	_ = viper.ReadInConfig() // optional, don't panic if missing
 
-	// Load .env (default)
-	viper.SetConfigFile(".env")
-	_ = viper.MergeInConfig()
+	// Load .env
+	envViper := viper.New()
+	envViper.SetConfigFile(".env")
+	if err := envViper.ReadInConfig(); err == nil {
+		_ = viper.MergeConfigMap(envViper.AllSettings())
+	}
 
-	// Load .env.production if exists (for deployment)
-	viper.SetConfigFile(".env.production")
-	_ = viper.MergeInConfig()
+	// Load .env.production if it exists (optional override)
+	envProd := viper.New()
+	envProd.SetConfigFile(".env.production")
+	if err := envProd.ReadInConfig(); err == nil {
+		_ = viper.MergeConfigMap(envProd.AllSettings())
+	}
 
-	// Load environment variables (overrides everything)
+	// Bind environment variables
 	viper.AutomaticEnv()
+	_ = viper.BindEnv("DB_USER")
+	_ = viper.BindEnv("DB_PASS")
 
 	Config = AppConfig{
 		Name: viper.GetString("app.name"),
@@ -44,8 +52,8 @@ func InitConfig() {
 		Database: DatabaseConfig{
 			Host:     viper.GetString("database.host"),
 			Port:     viper.GetInt("database.port"),
-			User:     viper.GetString("database.user"),
-			Password: viper.GetString("database.password"),
+			User:     viper.GetString("DB_USER"),
+			Password: viper.GetString("DB_PASS"),
 			Name:     viper.GetString("database.name"),
 		},
 	}
