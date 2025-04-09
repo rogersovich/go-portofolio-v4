@@ -9,15 +9,6 @@ import (
 	"github.com/rogersovich/go-portofolio-v4/utils"
 )
 
-type TechnologyResponse struct {
-	ID              uint   `json:"id"`
-	Name            string `json:"name"`
-	DescriptionHTML string `json:"description"`
-	Logo            string `json:"logo"`
-	Major           bool   `json:"is_major"`
-	CreatedAt       string `json:"created_at"`
-}
-
 func GetAllTechnologies(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
@@ -51,17 +42,21 @@ func GetAllTechnologies(c *gin.Context) {
 		return
 	}
 
-	var response []TechnologyResponse
-	for _, tech := range technologies {
-		response = append(response, TechnologyResponse{
-			ID:              tech.ID,
-			Name:            tech.Name,
-			Logo:            tech.LogoURL,
-			DescriptionHTML: tech.DescriptionHTML,
-			Major:           tech.IsMajor,
-			CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
-		})
+	utils.Success(c, "Technologies fetched successfully", technologies)
+}
+
+func GetTechnology(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, "Invalid technology ID")
+		return
 	}
 
-	utils.Success(c, "Technologies fetched successfully", response)
+	tech, err := services.GetTechnology(id)
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Success(c, "Technology fetched successfully", tech)
 }

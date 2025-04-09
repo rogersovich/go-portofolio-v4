@@ -11,6 +11,7 @@ func RegisterTechnologyRoutes(r *gin.Engine) {
 		tech := api.Group("/technologies")
 		{
 			tech.GET("", controllers.GetAllTechnologies)
+			tech.GET("/:id", controllers.GetTechnology)
 			// future: tech.POST, tech.PUT, etc.
 		}
 	}

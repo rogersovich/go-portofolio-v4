@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/rogersovich/go-portofolio-v4/config"
+	"github.com/rogersovich/go-portofolio-v4/dto"
 	"github.com/rogersovich/go-portofolio-v4/models"
 	"github.com/rogersovich/go-portofolio-v4/utils"
 )
@@ -22,7 +23,7 @@ type TechnologyQueryParams struct {
 	Limit       int
 }
 
-func GetAllTechnologies(params TechnologyQueryParams) ([]models.Technology, error) {
+func GetAllTechnologies(params TechnologyQueryParams) ([]dto.TechnologyResponse, error) {
 	fmt.Println("params", params)
 	db, _ := config.DB.DB()
 
@@ -110,5 +111,43 @@ func GetAllTechnologies(params TechnologyQueryParams) ([]models.Technology, erro
 		technologies = append(technologies, tech)
 	}
 
-	return technologies, nil
+	var response []dto.TechnologyResponse
+	for _, tech := range technologies {
+		response = append(response, dto.TechnologyResponse{
+			ID:              tech.ID,
+			Name:            tech.Name,
+			Logo:            tech.LogoURL,
+			DescriptionHTML: tech.DescriptionHTML,
+			Major:           tech.IsMajor,
+			CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
+		})
+	}
+
+	return response, nil
+}
+
+func GetTechnology(id int) (dto.TechnologySingleResponse, error) {
+	var result dto.TechnologySingleResponse
+	var tech models.Technology
+
+	if err := config.DB.Table("technologies").
+		Where("id = ?", id).
+		Select("id", "name", "description_html", "logo_url", "is_major", "created_at").
+		First(&tech).Error; err != nil {
+		return result, err
+	}
+
+	fmt.Println(tech.IsMajor)
+
+	result = dto.TechnologySingleResponse{
+		ID:              tech.ID,
+		Name:            tech.Name,
+		DescriptionHTML: tech.DescriptionHTML,
+		LogoURL:         tech.LogoURL,
+		IsMajor:         utils.BoolToYN(tech.IsMajor),
+		CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
+	}
+
+	return result, nil
+
 }
