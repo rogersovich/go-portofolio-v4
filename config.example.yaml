@@ -1,9 +1,0 @@
-app:
-  name: GoPortofolioV4
-  port: 4000
-  debug: true
-
-database:
-  host: 127.0.0.1
-  port: 3306
-  name: portofolio_v4

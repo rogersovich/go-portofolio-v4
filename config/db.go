@@ -55,7 +55,7 @@ func ConnectDB() {
 		sqlDB.SetConnMaxLifetime(30 * time.Minute) // lifetime before closing
 
 		DB = db
-		fmt.Println("✅ Database connected with pooling!")
+		// fmt.Println("✅ Database connected with pooling!")
 		return
 	}
 
