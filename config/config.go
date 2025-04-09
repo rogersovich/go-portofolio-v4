@@ -2,11 +2,11 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/rogersovich/go-portofolio-v4/utils"
 )
 
 type AppConfig struct {
@@ -28,7 +28,7 @@ var Config AppConfig
 func InitConfig() {
 	// ✅ Load .env (priority)
 	if err := godotenv.Load(".env"); err != nil {
-		log.Println("⚠️ .env not found, trying .env.production...")
+		utils.LogError(err.Error(), "")
 		_ = godotenv.Load(".env.production")
 	}
 
@@ -49,7 +49,7 @@ func InitConfig() {
 	}
 
 	// Optional debug print
-	fmt.Printf("✅ Loaded config: %+v\n", Config)
+	utils.Log.Info(fmt.Sprintf("✅ Loaded config: %+v", Config))
 }
 
 func InitConfigForTest() {

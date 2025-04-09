@@ -11,10 +11,8 @@ import (
 )
 
 func main() {
-	// Init Viper Config
+	utils.InitLogger()
 	config.InitConfig()
-
-	// Init DB
 	config.ConnectDB()
 
 	r := gin.Default()

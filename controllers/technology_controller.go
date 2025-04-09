@@ -18,7 +18,7 @@ type TechnologyResponse struct {
 func GetAllTechnologies(c *gin.Context) {
 	technologies, err := services.GetAllTechnologies()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch technologies"})
+		utils.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
