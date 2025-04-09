@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rogersovich/go-portofolio-v4/services"
@@ -9,14 +10,42 @@ import (
 )
 
 type TechnologyResponse struct {
-	ID    uint   `json:"id"`
-	Name  string `json:"name"`
-	Logo  string `json:"logo"`
-	Major bool   `json:"is_major"`
+	ID              uint   `json:"id"`
+	Name            string `json:"name"`
+	DescriptionHTML string `json:"description"`
+	Logo            string `json:"logo"`
+	Major           bool   `json:"is_major"`
+	CreatedAt       string `json:"created_at"`
 }
 
 func GetAllTechnologies(c *gin.Context) {
-	technologies, err := services.GetAllTechnologies()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	if page < 1 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	params := services.TechnologyQueryParams{
+		Sort:        c.DefaultQuery("sort", "ASC"),
+		Order:       c.DefaultQuery("order", "id"),
+		FilterName:  c.Query("filter_name"),
+		FilterDesc:  c.Query("filter_desc"),
+		IsMajor:     c.Query("is_major"),  // expects "Y" or "N"
+		IsDelete:    c.Query("is_delete"), // expects "Y" or "N"
+		CreatedFrom: c.Query("created_from"),
+		CreatedTo:   c.Query("created_to"),
+		Page:        page,
+		Limit:       limit,
+	}
+
+	technologies, err := services.GetAllTechnologies(params)
 	if err != nil {
 		utils.Error(c, http.StatusInternalServerError, err.Error())
 		return
@@ -25,10 +54,12 @@ func GetAllTechnologies(c *gin.Context) {
 	var response []TechnologyResponse
 	for _, tech := range technologies {
 		response = append(response, TechnologyResponse{
-			ID:    tech.ID,
-			Name:  tech.Name,
-			Logo:  tech.LogoURL,
-			Major: tech.IsMajor,
+			ID:              tech.ID,
+			Name:            tech.Name,
+			Logo:            tech.LogoURL,
+			DescriptionHTML: tech.DescriptionHTML,
+			Major:           tech.IsMajor,
+			CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
 		})
 	}
 
