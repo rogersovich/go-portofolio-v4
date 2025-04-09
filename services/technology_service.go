@@ -10,20 +10,7 @@ import (
 	"github.com/rogersovich/go-portofolio-v4/utils"
 )
 
-type TechnologyQueryParams struct {
-	Sort        string
-	Order       string
-	FilterName  string
-	FilterDesc  string
-	IsMajor     string // "Y" or "N"
-	IsDelete    string // "Y" or "N"
-	CreatedFrom string
-	CreatedTo   string
-	Page        int
-	Limit       int
-}
-
-func GetAllTechnologies(params TechnologyQueryParams) ([]dto.TechnologyResponse, error) {
+func GetAllTechnologies(params dto.TechnologyQueryParams) ([]dto.TechnologyResponse, error) {
 	fmt.Println("params", params)
 	db, _ := config.DB.DB()
 
@@ -118,7 +105,7 @@ func GetAllTechnologies(params TechnologyQueryParams) ([]dto.TechnologyResponse,
 			Name:            tech.Name,
 			Logo:            tech.LogoURL,
 			DescriptionHTML: tech.DescriptionHTML,
-			Major:           tech.IsMajor,
+			Major:           utils.BoolToYN(tech.IsMajor),
 			CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
 		})
 	}
@@ -137,8 +124,6 @@ func GetTechnology(id int) (dto.TechnologySingleResponse, error) {
 		return result, err
 	}
 
-	fmt.Println(tech.IsMajor)
-
 	result = dto.TechnologySingleResponse{
 		ID:              tech.ID,
 		Name:            tech.Name,
@@ -150,4 +135,32 @@ func GetTechnology(id int) (dto.TechnologySingleResponse, error) {
 
 	return result, nil
 
+}
+
+func CreateTechnology(req dto.CreateTechnologyRequest) (dto.TechnologySingleResponse, error) {
+	tech := models.Technology{
+		Name:            req.Name,
+		DescriptionHTML: req.DescriptionHTML,
+		LogoURL:         req.LogoURL,
+		IsMajor:         strings.ToUpper(req.IsMajor) == "Y",
+	}
+
+	var result dto.TechnologySingleResponse
+
+	// utils.Log.Debug(tech)
+
+	if err := config.DB.Create(&tech).Error; err != nil {
+		return result, err
+	}
+
+	result = dto.TechnologySingleResponse{
+		ID:              tech.ID,
+		Name:            tech.Name,
+		DescriptionHTML: tech.DescriptionHTML,
+		LogoURL:         tech.LogoURL,
+		IsMajor:         utils.BoolToYN(tech.IsMajor),
+		CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
+	}
+
+	return result, nil
 }

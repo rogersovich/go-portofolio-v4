@@ -12,7 +12,7 @@ func RegisterTechnologyRoutes(r *gin.Engine) {
 		{
 			tech.GET("", controllers.GetAllTechnologies)
 			tech.GET("/:id", controllers.GetTechnology)
-			// future: tech.POST, tech.PUT, etc.
+			tech.POST("/store", controllers.CreateTechnology)
 		}
 	}
 }

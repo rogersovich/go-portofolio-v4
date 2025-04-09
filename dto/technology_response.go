@@ -5,7 +5,7 @@ type TechnologyResponse struct {
 	Name            string `json:"name"`
 	DescriptionHTML string `json:"description"`
 	Logo            string `json:"logo"`
-	Major           bool   `json:"is_major"`
+	Major           string `json:"is_major"`
 	CreatedAt       string `json:"created_at"`
 }
 type TechnologySingleResponse struct {

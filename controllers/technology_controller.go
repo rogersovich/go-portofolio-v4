@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rogersovich/go-portofolio-v4/dto"
 	"github.com/rogersovich/go-portofolio-v4/services"
 	"github.com/rogersovich/go-portofolio-v4/utils"
 )
@@ -23,7 +24,7 @@ func GetAllTechnologies(c *gin.Context) {
 		limit = 100
 	}
 
-	params := services.TechnologyQueryParams{
+	params := dto.TechnologyQueryParams{
 		Sort:        c.DefaultQuery("sort", "ASC"),
 		Order:       c.DefaultQuery("order", "id"),
 		FilterName:  c.Query("filter_name"),
@@ -59,4 +60,20 @@ func GetTechnology(c *gin.Context) {
 	}
 
 	utils.Success(c, "Technology fetched successfully", tech)
+}
+
+func CreateTechnology(c *gin.Context) {
+	var req dto.CreateTechnologyRequest
+
+	if !utils.ValidateStruct(c, &req, c.ShouldBindJSON(&req)) {
+		return // already responded with JSON errors
+	}
+
+	tech, err := services.CreateTechnology(req)
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, "Failed to create data")
+		return
+	}
+
+	utils.Success(c, "Technology created successfully", tech)
 }
