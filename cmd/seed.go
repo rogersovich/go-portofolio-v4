@@ -7,8 +7,9 @@ import (
 
 func main() {
 	// Init Config
-	config.InitConfig()
+	config.InitConfigForTest()
 
+	// Init DB
 	config.ConnectDB()
 
 	// Init Seed

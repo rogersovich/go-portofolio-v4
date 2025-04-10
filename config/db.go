@@ -2,9 +2,9 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"time"
 
-	"github.com/rogersovich/go-portofolio-v4/utils"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -30,7 +30,7 @@ func ConnectDB() {
 		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 		if err != nil {
 			message := fmt.Sprintf("❌ Attempt %d: Failed to connect to DB: %v", attempts, err)
-			utils.LogError(message, "")
+			log.Println(message)
 			time.Sleep(2 * time.Second)
 			continue
 		}
@@ -38,7 +38,7 @@ func ConnectDB() {
 		sqlDB, err := db.DB()
 		if err != nil {
 			message := fmt.Sprintf("❌ Attempt %d: Failed to get sql.DB: %v", attempts, err)
-			utils.LogError(message, "")
+			log.Println(message)
 			time.Sleep(2 * time.Second)
 			continue
 		}
@@ -47,7 +47,7 @@ func ConnectDB() {
 		err = sqlDB.Ping()
 		if err != nil {
 			message := fmt.Sprintf("❌ Attempt %d: Ping failed: %v", attempts, err)
-			utils.LogError(message, "")
+			log.Println(message)
 			time.Sleep(2 * time.Second)
 			continue
 		}
@@ -58,10 +58,9 @@ func ConnectDB() {
 		sqlDB.SetConnMaxLifetime(30 * time.Minute) // lifetime before closing
 
 		DB = db
-		utils.Log.Info("✅ Database connected with pooling!")
+		log.Printf("✅ Database connected with pooling!")
 		return
 	}
 
-	// log.Fatalf("❌ Could not connect to database after %d attempts", maxAttempts)
-	utils.Log.Fatalf("❌ Could not connect to database after %d attempts", maxAttempts)
+	log.Fatalf("❌ Could not connect to database after %d attempts", maxAttempts)
 }
