@@ -20,3 +20,11 @@ func Error(c *gin.Context, code int, message string) {
 		"message": message,
 	})
 }
+
+func ErrorValidation(c *gin.Context, code int, message string, errors interface{}) {
+	c.JSON(code, gin.H{
+		"status":  "error",
+		"message": message,
+		"errors":  errors,
+	})
+}

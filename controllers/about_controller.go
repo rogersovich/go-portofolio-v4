@@ -2,7 +2,10 @@ package controllers
 
 import (
 	"net/http"
+	"path/filepath"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rogersovich/go-portofolio-v4/dto"
@@ -61,21 +64,70 @@ func GetAllAbouts(c *gin.Context) {
 // 	utils.Success(c, "Technology fetched successfully", tech)
 // }
 
-// func CreateTechnology(c *gin.Context) {
-// 	var req dto.CreateTechnologyRequest
+func CreateAbout(c *gin.Context) {
+	// Get text fields
+	title := c.PostForm("title")
+	description := c.PostForm("description")
 
-// 	if !utils.ValidateStruct(c, &req, c.ShouldBindJSON(&req)) {
-// 		return // already responded with JSON errors
-// 	}
+	// Get uploaded file
+	file, err := c.FormFile("avatar_file")
+	if err != nil {
+		errors := []utils.FieldError{
+			{
+				Field:   "avatar_file",
+				Message: "Avatar file is required",
+			},
+		}
+		utils.ErrorValidation(c, http.StatusBadRequest, "Avatar file is required", errors)
+		return
+	}
 
-// 	tech, err := services.CreateTechnology(req)
-// 	if err != nil {
-// 		utils.Error(c, http.StatusInternalServerError, "Failed to create data")
-// 		return
-// 	}
+	// Optional: Validate file extension
+	allowedExtensions := []string{".jpg", ".jpeg", ".png", "webp"}
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if !slices.Contains(allowedExtensions, ext) {
+		errors := []utils.FieldError{
+			{
+				Field:   "avatar_file",
+				Message: "File must be .jpg, .jpeg, .png or .webp",
+			},
+		}
+		utils.ErrorValidation(c, http.StatusBadRequest, "File must be .jpg, .jpeg, .png or .webp", errors)
+		return
+	}
 
-// 	utils.Success(c, "Technology created successfully", tech)
-// }
+	// Optional: File size validation (e.g. max 2MB)
+	if file.Size > 2*1024*1024 {
+		errors := []utils.FieldError{
+			{
+				Field:   "avatar_file",
+				Message: "File size exceeds 2MB",
+			},
+		}
+		utils.ErrorValidation(c, http.StatusBadRequest, "File size exceeds 2MB", errors)
+		return
+	}
+
+	// Validate the struct using validator
+	req := dto.CreateAboutRequest{
+		Title:           title,
+		DescriptionHTML: description,
+		AvatarFile:      file.Filename, // just to trigger 'required' rule
+	}
+
+	if verr := utils.ValidateRequest(&req); verr != nil {
+		utils.ErrorValidation(c, http.StatusBadRequest, "Validation Error", verr)
+		return
+	}
+
+	// response, err := services.CreateAbout(req)
+	// if err != nil {
+	// 	utils.Error(c, http.StatusInternalServerError, "Failed to create data")
+	// 	return
+	// }
+
+	utils.Success(c, "About created successfully", nil)
+}
 
 // func UpdateTechnology(c *gin.Context) {
 // 	id, err := strconv.Atoi(c.Param("id"))

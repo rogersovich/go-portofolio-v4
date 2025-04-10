@@ -8,13 +8,13 @@ import (
 func RegisterAboutRoutes(r *gin.Engine) {
 	api := r.Group("/api")
 	{
-		tech := api.Group("/abouts")
+		about := api.Group("/abouts")
 		{
-			tech.GET("", controllers.GetAllAbouts)
-			// tech.GET("/:id", controllers.GetAbout)
-			// tech.POST("/store", controllers.CreateTechnology)
-			// tech.POST("/update/:id", controllers.UpdateTechnology)
-			// tech.POST("/delete", controllers.DeleteTechnology)
+			about.GET("", controllers.GetAllAbouts)
+			// about.GET("/:id", controllers.GetAbout)
+			about.POST("/store", controllers.CreateAbout)
+			// about.POST("/update/:id", controllers.UpdateAbout)
+			// about.POST("/delete", controllers.DeleteAbout)
 		}
 	}
 }

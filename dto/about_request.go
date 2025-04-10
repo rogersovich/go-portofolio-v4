@@ -13,9 +13,9 @@ type AboutQueryParams struct {
 }
 
 type CreateAboutRequest struct {
-	Title           string      `json:"title" binding:"required"`
-	DescriptionHTML string      `json:"description" binding:"required"`
-	AvatarFile      interface{} `json:"avatar_file" binding:"required"` // Assuming File is represented as an interface{}
+	Title           string      `json:"title" validate:"required"`
+	DescriptionHTML string      `json:"description" validate:"required"`
+	AvatarFile      interface{} `json:"avatar_file" validate:"required"` // Assuming File is represented as an interface{}
 }
 
 type UpdateAboutRequest struct {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -14,8 +15,14 @@ type FieldError struct {
 	Message string `json:"message"`
 }
 
+type ValidationErrorResponse struct {
+	Errors []FieldError `json:"errors"`
+}
+
 var customMessages = map[string]string{
 	"name.required":        "name is required",
+	"title.required":       "title is required",
+	"avatar_file.required": "avatar_file is required",
 	"description.required": "description is required",
 	"is_major.oneof":       "is_major must be either 'Y' or 'N'",
 	"id.required":          "id is required",
@@ -75,4 +82,46 @@ func ValidateStruct(c *gin.Context, requestStruct interface{}, bindErr error) bo
 		"error": bindErr.Error(),
 	})
 	return false
+}
+
+func ValidateRequest(data interface{}) []FieldError {
+	var validate = validator.New()
+
+	err := validate.Struct(data)
+	if err == nil {
+		return nil
+	}
+
+	var errs []FieldError
+	val := reflect.ValueOf(data).Elem()
+	typ := val.Type()
+
+	for _, fe := range err.(validator.ValidationErrors) {
+		fieldName := fe.StructField()
+		tag := fe.Tag()
+
+		// get json tag
+		field, _ := typ.FieldByName(fieldName)
+		jsonTag := field.Tag.Get("json")
+		if jsonTag == "" {
+			jsonTag = strings.ToLower(fieldName)
+		} else {
+			jsonTag = strings.Split(jsonTag, ",")[0] // handle omitempty
+		}
+
+		// get message from custom map
+		customKey := fmt.Sprintf("%s.%s", jsonTag, tag)
+		message, ok := customMessages[customKey]
+		if !ok {
+			// fallback message
+			message = fmt.Sprintf("%s is not valid (%s)", jsonTag, tag)
+		}
+
+		errs = append(errs, FieldError{
+			Field:   jsonTag,
+			Message: message,
+		})
+	}
+
+	return errs
 }
