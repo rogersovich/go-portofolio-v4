@@ -29,11 +29,11 @@ func InitLogger() {
 // 🔁 Reusable logging function for query errors
 func LogError(message string, fields string) {
 	if fields == "" {
-		Log.Warn(message)
+		Log.Error(message)
 	} else {
 		fieldsQuery := map[string]interface{}{"query": fields}
 
-		Log.WithFields(fieldsQuery).Warn(message)
+		Log.WithFields(fieldsQuery).Error(message)
 	}
 }
 

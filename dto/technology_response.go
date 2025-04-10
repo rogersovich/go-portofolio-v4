@@ -16,3 +16,16 @@ type TechnologySingleResponse struct {
 	IsMajor         string `json:"is_major"`
 	CreatedAt       string `json:"created_at"`
 }
+
+type TechnologyUpdateSingleResponse struct {
+	Name            string `json:"name"`
+	DescriptionHTML string `json:"description"`
+	LogoURL         string `json:"logo"`
+	IsMajor         string `json:"is_major"`
+}
+
+type TechnologyDeleteSingleResponse struct {
+	ID        int     `json:"id"`
+	Name      string  `json:"name"`
+	DeletedAt *string `json:"deleted_at"`
+}

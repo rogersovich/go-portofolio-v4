@@ -19,3 +19,14 @@ type CreateTechnologyRequest struct {
 	LogoURL         string `json:"logo" binding:"required"`
 	IsMajor         string `json:"is_major" binding:"required,oneof=Y N"` // use Y or N
 }
+
+type UpdateTechnologyRequest struct {
+	Name            string `json:"name" binding:"required"`
+	DescriptionHTML string `json:"description" binding:"required"`
+	LogoURL         string `json:"logo" binding:"required"`
+	IsMajor         string `json:"is_major" binding:"oneof=Y N"` // use Y or N
+}
+
+type DeleteTechnologyRequest struct {
+	ID int `json:"id" binding:"required"`
+}

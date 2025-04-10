@@ -77,3 +77,43 @@ func CreateTechnology(c *gin.Context) {
 
 	utils.Success(c, "Technology created successfully", tech)
 }
+
+func UpdateTechnology(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, "Invalid technology ID")
+		return
+	}
+
+	var req dto.UpdateTechnologyRequest
+
+	if !utils.ValidateStruct(c, &req, c.ShouldBindJSON(&req)) {
+		return // already responded with JSON errors
+	}
+
+	tech, err := services.UpdateTechnology(req, id)
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, "Failed to updated data")
+		return
+	}
+
+	utils.Success(c, "Technology updated successfully", tech)
+}
+
+func DeleteTechnology(c *gin.Context) {
+	var req dto.DeleteTechnologyRequest
+
+	if !utils.BindJSON(c, &req) || !utils.ValidateStruct(c, &req, nil) {
+		return
+	}
+
+	id := req.ID
+
+	tech, err := services.DeleteTechnology(id)
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Success(c, "Technology deleted successfully", tech)
+}

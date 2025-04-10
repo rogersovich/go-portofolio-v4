@@ -18,6 +18,8 @@ var customMessages = map[string]string{
 	"name.required":        "name is required",
 	"description.required": "description is required",
 	"is_major.oneof":       "is_major must be either 'Y' or 'N'",
+	"id.required":          "id is required",
+	"id.numeric":           "id must be numeric",
 }
 
 // ValidateStruct handles JSON binding and validation errors, and returns a structured error response.

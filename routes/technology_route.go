@@ -13,6 +13,8 @@ func RegisterTechnologyRoutes(r *gin.Engine) {
 			tech.GET("", controllers.GetAllTechnologies)
 			tech.GET("/:id", controllers.GetTechnology)
 			tech.POST("/store", controllers.CreateTechnology)
+			tech.POST("/update/:id", controllers.UpdateTechnology)
+			tech.POST("/delete", controllers.DeleteTechnology)
 		}
 	}
 }

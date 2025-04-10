@@ -1,6 +1,7 @@
 package services
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -11,7 +12,6 @@ import (
 )
 
 func GetAllTechnologies(params dto.TechnologyQueryParams) ([]dto.TechnologyResponse, error) {
-	fmt.Println("params", params)
 	db, _ := config.DB.DB()
 
 	var (
@@ -22,63 +22,40 @@ func GetAllTechnologies(params dto.TechnologyQueryParams) ([]dto.TechnologyRespo
 	query := `SELECT id, name, logo_url, description_html, is_major, created_at FROM technologies`
 
 	// 🔍 Filters
-	if params.FilterName != "" {
-		conditions = append(conditions, "name LIKE ?")
-		args = append(args, "%"+params.FilterName+"%")
+
+	filters := []utils.SQLFilter{
+		{Column: "name", Value: params.FilterName, Op: "LIKE"},
+		{Column: "description_html", Value: params.FilterDesc, Op: "LIKE"},
 	}
-	if params.FilterDesc != "" {
-		conditions = append(conditions, "description_html LIKE ?")
-		args = append(args, "%"+params.FilterDesc+"%")
-	}
-	// ✅ IsMajor filter
+
+	// Handle boolean flags
 	if params.IsMajor == "Y" {
-		conditions = append(conditions, "is_major = TRUE")
+		filters = append(filters, utils.SQLFilter{Column: "is_major", Op: "=", Value: true})
 	} else if params.IsMajor == "N" {
-		conditions = append(conditions, "is_major = FALSE")
+		filters = append(filters, utils.SQLFilter{Column: "is_major", Op: "=", Value: false})
 	}
-	// ✅ IsDelete filter
+
 	if params.IsDelete == "N" {
-		conditions = append(conditions, "deleted_at IS NULL")
+		filters = append(filters, utils.SQLFilter{Column: "deleted_at", Op: "IS NULL", Value: true})
 	} else if params.IsDelete == "Y" {
-		conditions = append(conditions, "deleted_at IS NOT NULL")
+		filters = append(filters, utils.SQLFilter{Column: "deleted_at", Op: "IS NOT NULL", Value: true})
 	}
+
+	conditions, args = utils.BuildSQLFilters(filters)
 
 	// 📅 Date Range (created_from & created_to)
 	utils.AddDateRangeFilter("created_at", params.CreatedFrom, params.CreatedTo, &conditions, &args)
 
-	if len(conditions) > 0 {
-		query += " WHERE " + strings.Join(conditions, " AND ")
-	}
+	// Add WHERE clause
+	query += utils.BuildWhereClause(conditions)
 
-	fmt.Println(conditions, args)
-
-	// 🧭 Sorting
-	order := "id"
-	if params.Order != "" {
-		order = params.Order
-	}
-	sort := "ASC"
-	if strings.ToUpper(params.Sort) == "DESC" {
-		sort = "DESC"
-	}
-	query += fmt.Sprintf(" ORDER BY %s %s", order, sort)
-
-	// 🧮 Pagination
-	limit := params.Limit
-	page := params.Page
-	if limit <= 0 {
-		limit = 10
-	}
-	if page <= 0 {
-		page = 1
-	}
-	offset := (page - 1) * limit
-
-	query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+	// 🧭 Append order + pagination
+	query += utils.BuildOrderAndPagination(params.Order, params.Sort, params.Page, params.Limit)
 
 	// Quer Debug
 
-	utils.Log.Debug("Built Query:", query)
+	utils.Log.Debug("Query SQL:", query)
+	utils.Log.Debug("Conditons SQL:", conditions)
 
 	rows, err := db.Query(query, args...)
 	if err != nil {
@@ -134,7 +111,6 @@ func GetTechnology(id int) (dto.TechnologySingleResponse, error) {
 	}
 
 	return result, nil
-
 }
 
 func CreateTechnology(req dto.CreateTechnologyRequest) (dto.TechnologySingleResponse, error) {
@@ -147,8 +123,6 @@ func CreateTechnology(req dto.CreateTechnologyRequest) (dto.TechnologySingleResp
 
 	var result dto.TechnologySingleResponse
 
-	// utils.Log.Debug(tech)
-
 	if err := config.DB.Create(&tech).Error; err != nil {
 		return result, err
 	}
@@ -160,6 +134,63 @@ func CreateTechnology(req dto.CreateTechnologyRequest) (dto.TechnologySingleResp
 		LogoURL:         tech.LogoURL,
 		IsMajor:         utils.BoolToYN(tech.IsMajor),
 		CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
+	}
+
+	return result, nil
+}
+
+func UpdateTechnology(req dto.UpdateTechnologyRequest, id int) (dto.TechnologyUpdateSingleResponse, error) {
+	tech := models.Technology{
+		Name:            req.Name,
+		DescriptionHTML: req.DescriptionHTML,
+		LogoURL:         req.LogoURL,
+		IsMajor:         strings.ToUpper(req.IsMajor) == "Y",
+	}
+
+	var result dto.TechnologyUpdateSingleResponse
+
+	if err := config.DB.Where("id = ?", id).Updates(&tech).Error; err != nil {
+		return result, err
+	}
+
+	result = dto.TechnologyUpdateSingleResponse{
+		Name:            tech.Name,
+		DescriptionHTML: tech.DescriptionHTML,
+		LogoURL:         tech.LogoURL,
+		IsMajor:         utils.BoolToYN(tech.IsMajor),
+	}
+
+	return result, nil
+}
+
+func DeleteTechnology(id int) (dto.TechnologyDeleteSingleResponse, error) {
+	db, _ := config.DB.DB()
+
+	table := "technologies"
+
+	// Check if the row exists and not already soft-deleted
+	selectQuery := `SELECT id, name, deleted_at FROM ` + table + ` WHERE id = ? AND deleted_at IS NULL`
+
+	var result dto.TechnologyDeleteSingleResponse
+
+	// Query single row
+	err := db.QueryRow(selectQuery, id).Scan(&result.ID, &result.Name, &result.DeletedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			utils.LogError(err.Error(), "")
+			return result, fmt.Errorf("technology with id %d not found or already deleted", id)
+		}
+		utils.LogError(err.Error(), selectQuery)
+		return result, fmt.Errorf("query error: %w", err)
+	}
+
+	// Perform soft delete
+	updateQuery := `UPDATE ` + table + ` SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?`
+
+	_, err = db.Exec(updateQuery, id)
+	if err != nil {
+		utils.LogError(err.Error(), updateQuery)
+		return result, fmt.Errorf("failed to delete technology: %w", err)
 	}
 
 	return result, nil
