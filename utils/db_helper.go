@@ -65,9 +65,49 @@ func BuildSQLFilters(filters []SQLFilter) (conditions []string, args []interface
 		case "LIKE":
 			conditions = append(conditions, f.Column+" LIKE ?")
 			args = append(args, "%"+f.Value.(string)+"%")
+
+		case "NOT LIKE":
+			conditions = append(conditions, f.Column+" NOT LIKE ?")
+			args = append(args, "%"+f.Value.(string)+"%")
+
 		case "=":
 			conditions = append(conditions, f.Column+" = ?")
 			args = append(args, f.Value)
+
+		case "!=", "<>":
+			conditions = append(conditions, f.Column+" <> ?")
+			args = append(args, f.Value)
+
+		case ">", ">=", "<", "<=":
+			conditions = append(conditions, f.Column+" "+f.Op+" ?")
+			args = append(args, f.Value)
+
+		case "IN", "NOT IN":
+			values, ok := f.Value.([]interface{})
+			if !ok || len(values) == 0 {
+				continue
+			}
+			placeholders := make([]string, len(values))
+			for i := range values {
+				placeholders[i] = "?"
+				args = append(args, values[i])
+			}
+			conditions = append(conditions, fmt.Sprintf("%s %s (%s)", f.Column, f.Op, strings.Join(placeholders, ",")))
+
+			// used example
+			// Value:  []interface{}{"active", "pending", "on-hold"},
+
+		case "BETWEEN":
+			vals, ok := f.Value.([]interface{})
+			if !ok || len(vals) != 2 {
+				continue
+			}
+			conditions = append(conditions, fmt.Sprintf("%s BETWEEN ? AND ?", f.Column))
+			args = append(args, vals[0], vals[1])
+
+			// used example
+			// Value: []interface{}{"2024-01-01", "2024-12-31"},
+
 		case "IS NULL", "IS NOT NULL":
 			conditions = append(conditions, f.Column+" "+f.Op)
 		}

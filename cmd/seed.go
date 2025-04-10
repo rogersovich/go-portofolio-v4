@@ -5,7 +5,7 @@ import (
 	"github.com/rogersovich/go-portofolio-v4/seeds"
 )
 
-func main() {
+func runSeed() {
 	// Init Config
 	config.InitConfigForTest()
 

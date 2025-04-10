@@ -1,0 +1,29 @@
+package dto
+
+type AboutResponse struct {
+	ID              uint   `json:"id"`
+	Title           string `json:"title"`
+	DescriptionHTML string `json:"description"`
+	AvatarFileName  string `json:"avatar_file"`
+	AvatarURL       string `json:"avatar_url"`
+	CreatedAt       string `json:"created_at"`
+}
+type AboutSingleResponse struct {
+	ID              uint   `json:"id"`
+	Title           string `json:"title"`
+	DescriptionHTML string `json:"description"`
+	AvatarFileName  string `json:"avatar_file"`
+	CreatedAt       string `json:"created_at"`
+}
+
+type AboutUpdateSingleResponse struct {
+	Title           string `json:"title"`
+	DescriptionHTML string `json:"description"`
+	AvatarURL       string `json:"avatar_url"`
+}
+
+type AboutDeleteSingleResponse struct {
+	ID        int     `json:"id"`
+	Title     string  `json:"title"`
+	DeletedAt *string `json:"deleted_at"`
+}
