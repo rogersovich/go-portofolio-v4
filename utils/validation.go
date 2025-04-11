@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -78,10 +79,23 @@ func ValidateStruct(c *gin.Context, requestStruct interface{}, bindErr error) bo
 	}
 
 	// Fallback for non-validation binding errors (e.g. malformed JSON)
-	c.JSON(400, gin.H{
-		"error": bindErr.Error(),
-	})
-	return false
+	switch err := bindErr.(type) {
+	case *json.SyntaxError:
+		c.JSON(400, gin.H{
+			"error": fmt.Sprintf("Malformed JSON at offset %d", err.Offset),
+		})
+		return false
+	case *json.UnmarshalTypeError:
+		c.JSON(400, gin.H{
+			"error": fmt.Sprintf("Wrong type for field '%s': %s", err.Field, err.Error()),
+		})
+		return false
+	default:
+		c.JSON(400, gin.H{
+			"error": "Invalid request body: " + bindErr.Error(),
+		})
+		return false
+	}
 }
 
 func ValidateRequest(data interface{}) []FieldError {

@@ -23,6 +23,13 @@ type AboutUpdateSingleResponse struct {
 	AvatarURL       string `json:"avatar_url"`
 }
 
+type AboutUpdateResponse struct {
+	Title           string `json:"title"`
+	DescriptionHTML string `json:"description"`
+	AvatarURL       string `json:"avatar_url"`
+	AvatarFileName  string `json:"avatar_file"`
+}
+
 type AboutDeleteSingleResponse struct {
 	ID        int     `json:"id"`
 	Title     string  `json:"title"`

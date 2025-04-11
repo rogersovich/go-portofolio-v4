@@ -11,10 +11,10 @@ func RegisterAboutRoutes(r *gin.Engine) {
 		about := api.Group("/abouts")
 		{
 			about.GET("", controllers.GetAllAbouts)
-			// about.GET("/:id", controllers.GetAbout)
+			about.GET("/:id", controllers.GetAbout)
 			about.POST("/store", controllers.CreateAbout)
-			// about.POST("/update/:id", controllers.UpdateAbout)
-			// about.POST("/delete", controllers.DeleteAbout)
+			about.POST("/update", controllers.UpdateAbout)
+			about.POST("/delete", controllers.DeleteAbout)
 		}
 	}
 }

@@ -35,7 +35,7 @@ func GetAllTechnologies(params dto.TechnologyQueryParams) ([]dto.TechnologyRespo
 		filters = append(filters, utils.SQLFilter{Column: "is_major", Op: "=", Value: false})
 	}
 
-	if params.IsDelete == "N" {
+	if params.IsDelete == "N" || params.IsDelete == "" {
 		filters = append(filters, utils.SQLFilter{Column: "deleted_at", Op: "IS NULL", Value: true})
 	} else if params.IsDelete == "Y" {
 		filters = append(filters, utils.SQLFilter{Column: "deleted_at", Op: "IS NOT NULL", Value: true})
@@ -91,30 +91,22 @@ func GetAllTechnologies(params dto.TechnologyQueryParams) ([]dto.TechnologyRespo
 }
 
 func GetTechnology(id int) (dto.TechnologySingleResponse, error) {
-	var result dto.TechnologySingleResponse
 	var tech models.Technology
-
-	if err := config.DB.Table("technologies").
-		Where("id = ?", id).
-		Select("id", "name", "description_html", "logo_url", "is_major", "created_at").
-		First(&tech).Error; err != nil {
-		return result, err
+	if err := config.DB.First(&tech, id).Error; err != nil {
+		return dto.TechnologySingleResponse{}, err
 	}
 
-	result = dto.TechnologySingleResponse{
+	return dto.TechnologySingleResponse{
 		ID:              tech.ID,
 		Name:            tech.Name,
 		DescriptionHTML: tech.DescriptionHTML,
 		LogoURL:         tech.LogoURL,
-		IsMajor:         utils.BoolToYN(tech.IsMajor),
 		CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
-	}
-
-	return result, nil
+	}, nil
 }
 
 func CreateTechnology(req dto.CreateTechnologyRequest) (dto.TechnologySingleResponse, error) {
-	tech := models.Technology{
+	data := models.Technology{
 		Name:            req.Name,
 		DescriptionHTML: req.DescriptionHTML,
 		LogoURL:         req.LogoURL,
@@ -123,24 +115,24 @@ func CreateTechnology(req dto.CreateTechnologyRequest) (dto.TechnologySingleResp
 
 	var result dto.TechnologySingleResponse
 
-	if err := config.DB.Create(&tech).Error; err != nil {
+	if err := config.DB.Create(&data).Error; err != nil {
 		return result, err
 	}
 
 	result = dto.TechnologySingleResponse{
-		ID:              tech.ID,
-		Name:            tech.Name,
-		DescriptionHTML: tech.DescriptionHTML,
-		LogoURL:         tech.LogoURL,
-		IsMajor:         utils.BoolToYN(tech.IsMajor),
-		CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
+		ID:              data.ID,
+		Name:            data.Name,
+		DescriptionHTML: data.DescriptionHTML,
+		LogoURL:         data.LogoURL,
+		IsMajor:         utils.BoolToYN(data.IsMajor),
+		CreatedAt:       data.CreatedAt.Format("2006-01-02"),
 	}
 
 	return result, nil
 }
 
 func UpdateTechnology(req dto.UpdateTechnologyRequest, id int) (dto.TechnologyUpdateSingleResponse, error) {
-	tech := models.Technology{
+	data := models.Technology{
 		Name:            req.Name,
 		DescriptionHTML: req.DescriptionHTML,
 		LogoURL:         req.LogoURL,
@@ -149,15 +141,15 @@ func UpdateTechnology(req dto.UpdateTechnologyRequest, id int) (dto.TechnologyUp
 
 	var result dto.TechnologyUpdateSingleResponse
 
-	if err := config.DB.Where("id = ?", id).Updates(&tech).Error; err != nil {
+	if err := config.DB.Where("id = ?", id).Updates(&data).Error; err != nil {
 		return result, err
 	}
 
 	result = dto.TechnologyUpdateSingleResponse{
-		Name:            tech.Name,
-		DescriptionHTML: tech.DescriptionHTML,
-		LogoURL:         tech.LogoURL,
-		IsMajor:         utils.BoolToYN(tech.IsMajor),
+		Name:            data.Name,
+		DescriptionHTML: data.DescriptionHTML,
+		LogoURL:         data.LogoURL,
+		IsMajor:         utils.BoolToYN(data.IsMajor),
 	}
 
 	return result, nil

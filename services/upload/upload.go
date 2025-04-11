@@ -3,6 +3,7 @@ package upload
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/minio/minio-go/v7"
@@ -49,22 +50,27 @@ func HandleUploadedFile(
 	folderName string,
 	allowedExt []string,
 	maxSize int64,
+	validationCheck []string,
 ) (dto.UploadResponse, []utils.FieldError, error) {
+
+	if len(validationCheck) == 0 {
+		validationCheck = []string{"required", "extension", "size"}
+	}
 
 	// Step 1: Get the file
 	file, err := ctx.FormFile(fieldName)
-	if err != nil {
+	if err != nil && slices.Contains(validationCheck, "required") {
 		return dto.UploadResponse{}, utils.GenerateFieldErrorResponse(fieldName, fmt.Sprintf("%s is required", fieldName)), nil
 	}
 
 	// Step 2: Validate extension
 	errExt := ValidateExtension(file.Filename, allowedExt)
-	if errExt != nil {
+	if errExt != nil && slices.Contains(validationCheck, "extension") {
 		return dto.UploadResponse{}, errExt, nil
 	}
 
 	// Step 3: Validate size
-	if file.Size > maxSize {
+	if file.Size > maxSize && slices.Contains(validationCheck, "size") {
 		return dto.UploadResponse{}, utils.GenerateFieldErrorResponse(fieldName, fmt.Sprintf("%s exceeds max size", fieldName)), nil
 	}
 
@@ -86,4 +92,16 @@ func HandleUploadedFile(
 	}
 
 	return *uploadedData, nil, nil
+}
+
+func DeleteFromMinio(ctx context.Context, objectPath string) error {
+	bucketName := utils.GetEnv("MINIO_BUCKET")
+
+	// Init client
+	minioClient, err := GenerateMinioClient()
+	if err != nil {
+		return err
+	}
+
+	return minioClient.RemoveObject(ctx, bucketName, objectPath, minio.RemoveObjectOptions{})
 }

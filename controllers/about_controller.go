@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rogersovich/go-portofolio-v4/dto"
 	"github.com/rogersovich/go-portofolio-v4/services"
-	uploadService "github.com/rogersovich/go-portofolio-v4/services/upload"
 	"github.com/rogersovich/go-portofolio-v4/utils"
 )
 
@@ -43,32 +42,70 @@ func GetAllAbouts(c *gin.Context) {
 		return
 	}
 
-	utils.Success(c, "About fetched successfully", response)
+	utils.Success(c, "Success fetched data", response)
 }
 
-// func GetTechnology(c *gin.Context) {
-// 	id, err := strconv.Atoi(c.Param("id"))
-// 	if err != nil {
-// 		utils.Error(c, http.StatusBadRequest, "Invalid technology ID")
-// 		return
-// 	}
+func GetAbout(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
 
-// 	tech, err := services.GetTechnology(id)
-// 	if err != nil {
-// 		utils.Error(c, http.StatusInternalServerError, err.Error())
-// 		return
-// 	}
+	tech, err := services.GetAbout(id)
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
-// 	utils.Success(c, "Technology fetched successfully", tech)
-// }
+	utils.Success(c, "Success fetched data", tech)
+}
 
 func CreateAbout(c *gin.Context) {
 	// Get text fields
 	title := c.PostForm("title")
 	description := c.PostForm("description")
+	avatarFile := c.PostForm("avatar_file")
 
 	// Validate the struct using validator
 	req := dto.CreateAboutRequest{
+		Title:           title,
+		DescriptionHTML: description,
+		AvatarFile:      avatarFile,
+	}
+
+	if verr := utils.ValidateRequest(&req); verr != nil {
+		utils.ErrorValidation(c, http.StatusBadRequest, "Validation Error", verr)
+		return
+	}
+
+	response, statusCode, errField, err := services.CreateAbout(req, c)
+	if err != nil {
+		if statusCode == http.StatusBadRequest {
+			utils.ErrorValidation(c, http.StatusBadRequest, err.Error(), errField)
+		} else {
+			utils.Error(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	utils.Success(c, "Success to create data", response)
+}
+
+func UpdateAbout(c *gin.Context) {
+	// Get text fields
+	id, err := strconv.Atoi(c.PostForm("id"))
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	title := c.PostForm("title")
+	description := c.PostForm("description")
+
+	// Validate the struct using validator
+	req := dto.UpdateAboutRequest{
+		Id:              id,
 		Title:           title,
 		DescriptionHTML: description,
 	}
@@ -78,77 +115,35 @@ func CreateAbout(c *gin.Context) {
 		return
 	}
 
-	// Upload avatar_file
-	avatarData, avatarErrs, avatarUploadErr := uploadService.HandleUploadedFile(
-		c,
-		"avatar_file",
-		"about",
-		nil,         // use default allowed extensions
-		2*1024*1024, // max 2MB
-	)
-
-	if avatarErrs != nil {
-		utils.ErrorValidation(c, http.StatusBadRequest, "Invalid avatar_file", avatarErrs)
-		return
-	}
-	if avatarUploadErr != nil {
-		utils.Error(c, http.StatusInternalServerError, avatarUploadErr.Error())
-		return
-	}
-
-	// Validate the struct using validator
-	payload := dto.CreateAboutPayload{
-		Title:           title,
-		DescriptionHTML: description,
-		AvatarURL:       avatarData.FileURL,
-		AvatarFileName:  avatarData.FileName,
-	}
-
-	response, err := services.CreateAbout(payload)
+	//Update Database
+	response, statusCode, errField, err := services.UpdateAbout(req, id, c)
 	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Failed to create data")
+		if statusCode == http.StatusBadRequest {
+			utils.ErrorValidation(c, http.StatusBadRequest, err.Error(), errField)
+		} else {
+			utils.Error(c, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 
-	utils.Success(c, "Success to create data", response)
+	utils.Success(c, "Success to update data", response)
 }
 
-// func UpdateTechnology(c *gin.Context) {
-// 	id, err := strconv.Atoi(c.Param("id"))
-// 	if err != nil {
-// 		utils.Error(c, http.StatusBadRequest, "Invalid technology ID")
-// 		return
-// 	}
+func DeleteAbout(c *gin.Context) {
+	var req dto.DeleteAboutRequest
 
-// 	var req dto.UpdateTechnologyRequest
+	if !utils.ValidateStruct(c, &req, c.ShouldBindJSON(&req)) {
+		return
+	}
 
-// 	if !utils.ValidateStruct(c, &req, c.ShouldBindJSON(&req)) {
-// 		return // already responded with JSON errors
-// 	}
+	id := req.ID
 
-// 	tech, err := services.UpdateTechnology(req, id)
-// 	if err != nil {
-// 		utils.Error(c, http.StatusInternalServerError, "Failed to updated data")
-// 		return
-// 	}
+	// Delete data
+	statusCode, err := services.DeleteAbout(id, c)
+	if err != nil {
+		utils.Error(c, statusCode, err.Error())
+		return
+	}
 
-// 	utils.Success(c, "Technology updated successfully", tech)
-// }
-
-// func DeleteTechnology(c *gin.Context) {
-// 	var req dto.DeleteTechnologyRequest
-
-// 	if !utils.BindJSON(c, &req) || !utils.ValidateStruct(c, &req, nil) {
-// 		return
-// 	}
-
-// 	id := req.ID
-
-// 	tech, err := services.DeleteTechnology(id)
-// 	if err != nil {
-// 		utils.Error(c, http.StatusInternalServerError, err.Error())
-// 		return
-// 	}
-
-// 	utils.Success(c, "Technology deleted successfully", tech)
-// }
+	utils.Success(c, "Success to delete data", nil)
+}
