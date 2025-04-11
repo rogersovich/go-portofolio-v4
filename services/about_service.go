@@ -150,6 +150,9 @@ func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto
 		return result, http.StatusNotFound, nil, err
 	}
 
+	// set oldPath
+	oldPath := resAbout.AvatarFileName
+
 	// 2. Get new file (if uploaded)
 	avatarFile, err := c.FormFile("avatar_file")
 	var newFileURL string
@@ -158,10 +161,6 @@ func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto
 	fmt.Printf("avatarFile: %v\n", avatarFile)
 
 	if err == nil {
-		// 3. Optional: Delete old file from MinIO
-		oldPath := resAbout.AvatarFileName
-		_ = uploadService.DeleteFromMinio(c.Request.Context(), oldPath) // ignore error or handle if needed
-
 		// Upload avatar_file
 		avatarData, avatarErrs, avatarUploadErr := uploadService.HandleUploadedFile(
 			c,
@@ -200,6 +199,9 @@ func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto
 		Updates(&data).Error; err != nil {
 		return result, http.StatusInternalServerError, nil, err
 	}
+
+	// 3. Optional: Delete old file from MinIO
+	_ = uploadService.DeleteFromMinio(c.Request.Context(), oldPath) // ignore error or handle if needed
 
 	return dto.AboutUpdateResponse{
 		Title:           data.Title,
