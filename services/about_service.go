@@ -80,10 +80,12 @@ func GetAllAbouts(params dto.AboutQueryParams) ([]dto.AboutResponse, error) {
 	return response, nil
 }
 
-func CreateAbout(req dto.CreateAboutRequest) (dto.AboutSingleResponse, error) {
+func CreateAbout(req dto.CreateAboutPayload) (dto.AboutSingleResponse, error) {
 	tech := models.About{
 		Title:           req.Title,
 		DescriptionHTML: req.DescriptionHTML,
+		AvatarUrl:       req.AvatarURL,
+		AvatarFileName:  req.AvatarFileName,
 	}
 
 	var result dto.AboutSingleResponse
@@ -96,6 +98,8 @@ func CreateAbout(req dto.CreateAboutRequest) (dto.AboutSingleResponse, error) {
 		ID:              tech.ID,
 		Title:           tech.Title,
 		DescriptionHTML: tech.DescriptionHTML,
+		AvatarURL:       tech.AvatarUrl,
+		AvatarFileName:  tech.AvatarFileName,
 		CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
 	}
 

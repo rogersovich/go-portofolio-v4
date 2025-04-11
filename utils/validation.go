@@ -125,3 +125,13 @@ func ValidateRequest(data interface{}) []FieldError {
 
 	return errs
 }
+
+func GenerateFieldErrorResponse(field, message string) []FieldError {
+	errors := []FieldError{
+		{
+			Field:   field,
+			Message: message,
+		},
+	}
+	return errors
+}

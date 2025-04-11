@@ -13,9 +13,15 @@ type AboutQueryParams struct {
 }
 
 type CreateAboutRequest struct {
-	Title           string      `json:"title" validate:"required"`
-	DescriptionHTML string      `json:"description" validate:"required"`
-	AvatarFile      interface{} `json:"avatar_file" validate:"required"` // Assuming File is represented as an interface{}
+	Title           string `json:"title" validate:"required"`
+	DescriptionHTML string `json:"description" validate:"required"`
+}
+
+type CreateAboutPayload struct {
+	Title           string `json:"title"`
+	DescriptionHTML string `json:"description"`
+	AvatarURL       string `json:"avatar_url"`
+	AvatarFileName  string `json:"avatar_file_name"`
 }
 
 type UpdateAboutRequest struct {

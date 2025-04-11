@@ -2,14 +2,12 @@ package controllers
 
 import (
 	"net/http"
-	"path/filepath"
-	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rogersovich/go-portofolio-v4/dto"
 	"github.com/rogersovich/go-portofolio-v4/services"
+	uploadService "github.com/rogersovich/go-portofolio-v4/services/upload"
 	"github.com/rogersovich/go-portofolio-v4/utils"
 )
 
@@ -69,50 +67,10 @@ func CreateAbout(c *gin.Context) {
 	title := c.PostForm("title")
 	description := c.PostForm("description")
 
-	// Get uploaded file
-	file, err := c.FormFile("avatar_file")
-	if err != nil {
-		errors := []utils.FieldError{
-			{
-				Field:   "avatar_file",
-				Message: "Avatar file is required",
-			},
-		}
-		utils.ErrorValidation(c, http.StatusBadRequest, "Avatar file is required", errors)
-		return
-	}
-
-	// Optional: Validate file extension
-	allowedExtensions := []string{".jpg", ".jpeg", ".png", "webp"}
-	ext := strings.ToLower(filepath.Ext(file.Filename))
-	if !slices.Contains(allowedExtensions, ext) {
-		errors := []utils.FieldError{
-			{
-				Field:   "avatar_file",
-				Message: "File must be .jpg, .jpeg, .png or .webp",
-			},
-		}
-		utils.ErrorValidation(c, http.StatusBadRequest, "File must be .jpg, .jpeg, .png or .webp", errors)
-		return
-	}
-
-	// Optional: File size validation (e.g. max 2MB)
-	if file.Size > 2*1024*1024 {
-		errors := []utils.FieldError{
-			{
-				Field:   "avatar_file",
-				Message: "File size exceeds 2MB",
-			},
-		}
-		utils.ErrorValidation(c, http.StatusBadRequest, "File size exceeds 2MB", errors)
-		return
-	}
-
 	// Validate the struct using validator
 	req := dto.CreateAboutRequest{
 		Title:           title,
 		DescriptionHTML: description,
-		AvatarFile:      file.Filename, // just to trigger 'required' rule
 	}
 
 	if verr := utils.ValidateRequest(&req); verr != nil {
@@ -120,13 +78,39 @@ func CreateAbout(c *gin.Context) {
 		return
 	}
 
-	// response, err := services.CreateAbout(req)
-	// if err != nil {
-	// 	utils.Error(c, http.StatusInternalServerError, "Failed to create data")
-	// 	return
-	// }
+	// Upload avatar_file
+	avatarData, avatarErrs, avatarUploadErr := uploadService.HandleUploadedFile(
+		c,
+		"avatar_file",
+		"about",
+		nil,         // use default allowed extensions
+		2*1024*1024, // max 2MB
+	)
 
-	utils.Success(c, "About created successfully", nil)
+	if avatarErrs != nil {
+		utils.ErrorValidation(c, http.StatusBadRequest, "Invalid avatar_file", avatarErrs)
+		return
+	}
+	if avatarUploadErr != nil {
+		utils.Error(c, http.StatusInternalServerError, avatarUploadErr.Error())
+		return
+	}
+
+	// Validate the struct using validator
+	payload := dto.CreateAboutPayload{
+		Title:           title,
+		DescriptionHTML: description,
+		AvatarURL:       avatarData.FileURL,
+		AvatarFileName:  avatarData.FileName,
+	}
+
+	response, err := services.CreateAbout(payload)
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, "Failed to create data")
+		return
+	}
+
+	utils.Success(c, "Success to create data", response)
 }
 
 // func UpdateTechnology(c *gin.Context) {
