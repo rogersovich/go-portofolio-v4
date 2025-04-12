@@ -12,6 +12,8 @@ import (
 	"github.com/rogersovich/go-portofolio-v4/utils"
 )
 
+var folderNameAbout = "about"
+
 func GetAllAbouts(params dto.AboutQueryParams) ([]dto.AboutResponse, error) {
 	db, _ := config.DB.DB()
 
@@ -20,7 +22,7 @@ func GetAllAbouts(params dto.AboutQueryParams) ([]dto.AboutResponse, error) {
 		args       []interface{}
 	)
 
-	query := `SELECT id, title, avatar_url, description_html, created_at FROM abouts`
+	query := `SELECT id, title, avatar_url, avatar_file_name, description_html, created_at FROM abouts`
 
 	// 🔍 Filters
 
@@ -62,7 +64,7 @@ func GetAllAbouts(params dto.AboutQueryParams) ([]dto.AboutResponse, error) {
 
 	for rows.Next() {
 		var rowAbout models.About
-		if err := rows.Scan(&rowAbout.ID, &rowAbout.Title, &rowAbout.AvatarUrl, &rowAbout.DescriptionHTML, &rowAbout.CreatedAt); err != nil {
+		if err := rows.Scan(&rowAbout.ID, &rowAbout.Title, &rowAbout.AvatarUrl, &rowAbout.AvatarFileName, &rowAbout.DescriptionHTML, &rowAbout.CreatedAt); err != nil {
 			utils.LogWarning(err.Error(), query)
 			return nil, err
 		}
@@ -75,6 +77,7 @@ func GetAllAbouts(params dto.AboutQueryParams) ([]dto.AboutResponse, error) {
 			ID:              rowAbout.ID,
 			Title:           rowAbout.Title,
 			AvatarURL:       rowAbout.AvatarUrl,
+			AvatarFileName:  rowAbout.AvatarFileName,
 			DescriptionHTML: rowAbout.DescriptionHTML,
 			CreatedAt:       rowAbout.CreatedAt.Format("2006-01-02"),
 		})
@@ -104,7 +107,7 @@ func CreateAbout(req dto.CreateAboutRequest, c *gin.Context) (result dto.AboutSi
 	avatarData, avatarErrs, avatarUploadErr := uploadService.HandleUploadedFile(
 		c,
 		"avatar_file",
-		"about",
+		folderNameAbout,
 		nil,         // use default allowed extensions
 		2*1024*1024, // max 2MB
 		nil,         // []string{"required", "extension", "size"}
@@ -154,18 +157,16 @@ func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto
 	oldPath := resAbout.AvatarFileName
 
 	// 2. Get new file (if uploaded)
-	avatarFile, err := c.FormFile("avatar_file")
+	_, err = c.FormFile("avatar_file")
 	var newFileURL string
 	var newFileName string
-
-	fmt.Printf("avatarFile: %v\n", avatarFile)
 
 	if err == nil {
 		// Upload avatar_file
 		avatarData, avatarErrs, avatarUploadErr := uploadService.HandleUploadedFile(
 			c,
 			"avatar_file",
-			"about",
+			folderNameAbout,
 			nil,                           // use default allowed extensions
 			2*1024*1024,                   // max 2MB
 			[]string{"extension", "size"}, // []string{"required", "extension", "size"}
@@ -201,7 +202,12 @@ func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto
 	}
 
 	// 3. Optional: Delete old file from MinIO
-	_ = uploadService.DeleteFromMinio(c.Request.Context(), oldPath) // ignore error or handle if needed
+	if oldPath != newFileName {
+		err = uploadService.DeleteFromMinio(c.Request.Context(), oldPath) // ignore error or handle if needed
+		if err != nil {
+			utils.Log.Warn(err.Error())
+		}
+	}
 
 	return dto.AboutUpdateResponse{
 		Title:           data.Title,

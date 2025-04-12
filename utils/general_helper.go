@@ -25,3 +25,10 @@ func GetEnv(key string) string {
 	}
 	return ""
 }
+
+func StringOrDefault(s *string, def string) *string {
+	if s == nil {
+		return &def
+	}
+	return s
+}

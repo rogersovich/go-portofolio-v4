@@ -27,8 +27,8 @@ func GetAllTechnologies(c *gin.Context) {
 	params := dto.TechnologyQueryParams{
 		Sort:        c.DefaultQuery("sort", "ASC"),
 		Order:       c.DefaultQuery("order", "id"),
-		FilterName:  c.Query("filter_name"),
-		FilterDesc:  c.Query("filter_desc"),
+		FilterName:  c.Query("name"),
+		FilterDesc:  c.Query("description"),
 		IsMajor:     c.Query("is_major"),  // expects "Y" or "N"
 		IsDelete:    c.Query("is_delete"), // expects "Y" or "N"
 		CreatedFrom: c.Query("created_from"),
@@ -63,41 +63,73 @@ func GetTechnology(c *gin.Context) {
 }
 
 func CreateTechnology(c *gin.Context) {
-	var req dto.CreateTechnologyRequest
+	// Get text fields
+	name := c.PostForm("name")
+	description := c.PostForm("description")
+	isMajor := c.PostForm("is_major")
+	logoFile := c.PostForm("logo_file")
 
-	if !utils.ValidateStruct(c, &req, c.ShouldBindJSON(&req)) {
-		return // already responded with JSON errors
+	// Validate the struct using validator
+	req := dto.CreateTechnologyRequest{
+		Name:            name,
+		DescriptionHTML: description,
+		LogoFile:        logoFile,
+		IsMajor:         isMajor,
 	}
 
-	tech, err := services.CreateTechnology(req)
-	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Failed to create data")
+	if verr := utils.ValidateRequest(&req); verr != nil {
+		utils.ErrorValidation(c, http.StatusBadRequest, "Validation Error", verr)
 		return
 	}
 
-	utils.Success(c, "Technology created successfully", tech)
+	response, statusCode, errField, err := services.CreateTechnology(req, c)
+	if err != nil {
+		if statusCode == http.StatusBadRequest {
+			utils.ErrorValidation(c, http.StatusBadRequest, err.Error(), errField)
+		} else {
+			utils.Error(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	utils.Success(c, "Success to create data", response)
 }
 
 func UpdateTechnology(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.PostForm("id"))
 	if err != nil {
-		utils.Error(c, http.StatusBadRequest, "Invalid technology ID")
+		utils.Error(c, http.StatusBadRequest, "Invalid ID")
 		return
 	}
 
-	var req dto.UpdateTechnologyRequest
+	// Get text fields
+	name := c.PostForm("name")
+	description := c.PostForm("description")
+	isMajor := c.PostForm("is_major")
 
-	if !utils.ValidateStruct(c, &req, c.ShouldBindJSON(&req)) {
-		return // already responded with JSON errors
+	// Validate the struct using validator
+	req := dto.UpdateTechnologyRequest{
+		Id:              id,
+		Name:            name,
+		DescriptionHTML: description,
+		IsMajor:         isMajor,
 	}
 
-	tech, err := services.UpdateTechnology(req, id)
-	if err != nil {
-		utils.Error(c, http.StatusInternalServerError, "Failed to updated data")
+	if verr := utils.ValidateRequest(&req); verr != nil {
+		utils.ErrorValidation(c, http.StatusBadRequest, "Validation Error", verr)
 		return
 	}
 
-	utils.Success(c, "Technology updated successfully", tech)
+	response, statusCode, errField, err := services.UpdateTechnology(req, id, c)
+	if err != nil {
+		if statusCode == http.StatusBadRequest {
+			utils.ErrorValidation(c, http.StatusBadRequest, err.Error(), errField)
+		} else {
+			utils.Error(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	utils.Success(c, "Success to update data", response)
 }
 
 func DeleteTechnology(c *gin.Context) {

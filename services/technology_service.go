@@ -3,13 +3,18 @@ package services
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/rogersovich/go-portofolio-v4/config"
 	"github.com/rogersovich/go-portofolio-v4/dto"
 	"github.com/rogersovich/go-portofolio-v4/models"
+	uploadService "github.com/rogersovich/go-portofolio-v4/services/upload"
 	"github.com/rogersovich/go-portofolio-v4/utils"
 )
+
+var folderNameTechnology = "technology"
 
 func GetAllTechnologies(params dto.TechnologyQueryParams) ([]dto.TechnologyResponse, error) {
 	db, _ := config.DB.DB()
@@ -19,7 +24,7 @@ func GetAllTechnologies(params dto.TechnologyQueryParams) ([]dto.TechnologyRespo
 		args       []interface{}
 	)
 
-	query := `SELECT id, name, logo_url, description_html, is_major, created_at FROM technologies`
+	query := `SELECT id, name, logo_url, logo_file_name, description_html, is_major, created_at FROM technologies`
 
 	// 🔍 Filters
 
@@ -68,7 +73,7 @@ func GetAllTechnologies(params dto.TechnologyQueryParams) ([]dto.TechnologyRespo
 
 	for rows.Next() {
 		var tech models.Technology
-		if err := rows.Scan(&tech.ID, &tech.Name, &tech.LogoURL, &tech.DescriptionHTML, &tech.IsMajor, &tech.CreatedAt); err != nil {
+		if err := rows.Scan(&tech.ID, &tech.Name, &tech.LogoURL, &tech.LogoFileName, &tech.DescriptionHTML, &tech.IsMajor, &tech.CreatedAt); err != nil {
 			utils.LogWarning(err.Error(), query)
 			return nil, err
 		}
@@ -80,7 +85,8 @@ func GetAllTechnologies(params dto.TechnologyQueryParams) ([]dto.TechnologyRespo
 		response = append(response, dto.TechnologyResponse{
 			ID:              tech.ID,
 			Name:            tech.Name,
-			Logo:            tech.LogoURL,
+			LogoURL:         tech.LogoURL,
+			LogoFileName:    tech.LogoFileName,
 			DescriptionHTML: tech.DescriptionHTML,
 			Major:           utils.BoolToYN(tech.IsMajor),
 			CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
@@ -101,22 +107,43 @@ func GetTechnology(id int) (dto.TechnologySingleResponse, error) {
 		Name:            tech.Name,
 		DescriptionHTML: tech.DescriptionHTML,
 		LogoURL:         tech.LogoURL,
+		LogoFileName:    *tech.LogoFileName,
+		IsMajor:         utils.BoolToYN(tech.IsMajor),
 		CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
 	}, nil
 }
 
-func CreateTechnology(req dto.CreateTechnologyRequest) (dto.TechnologySingleResponse, error) {
+func CreateTechnology(req dto.CreateTechnologyRequest, c *gin.Context) (result dto.TechnologySingleResponse, statusCode int, errFiels []utils.FieldError, err error) {
+	// Upload logo_file
+	logoFile, logoErrs, logoUploadErr := uploadService.HandleUploadedFile(
+		c,
+		"logo_file",
+		folderNameTechnology,
+		nil,         // use default allowed extensions
+		2*1024*1024, // max 2MB
+		nil,         // []string{"required", "extension", "size"}
+	)
+
+	if logoErrs != nil {
+		err = fmt.Errorf("invalid avatar_file")
+		return result, http.StatusBadRequest, logoErrs, err
+	}
+
+	if logoUploadErr != nil {
+		err = fmt.Errorf("failed to upload avatar_file")
+		return result, http.StatusInternalServerError, logoErrs, err
+	}
+
 	data := models.Technology{
 		Name:            req.Name,
 		DescriptionHTML: req.DescriptionHTML,
-		LogoURL:         req.LogoURL,
+		LogoURL:         logoFile.FileURL,
+		LogoFileName:    &logoFile.FileName,
 		IsMajor:         strings.ToUpper(req.IsMajor) == "Y",
 	}
 
-	var result dto.TechnologySingleResponse
-
 	if err := config.DB.Create(&data).Error; err != nil {
-		return result, err
+		return result, http.StatusInternalServerError, nil, err
 	}
 
 	result = dto.TechnologySingleResponse{
@@ -124,35 +151,85 @@ func CreateTechnology(req dto.CreateTechnologyRequest) (dto.TechnologySingleResp
 		Name:            data.Name,
 		DescriptionHTML: data.DescriptionHTML,
 		LogoURL:         data.LogoURL,
+		LogoFileName:    *data.LogoFileName,
 		IsMajor:         utils.BoolToYN(data.IsMajor),
 		CreatedAt:       data.CreatedAt.Format("2006-01-02"),
 	}
 
-	return result, nil
+	return result, http.StatusOK, nil, nil
 }
 
-func UpdateTechnology(req dto.UpdateTechnologyRequest, id int) (dto.TechnologyUpdateSingleResponse, error) {
+func UpdateTechnology(req dto.UpdateTechnologyRequest, id int, c *gin.Context) (result dto.TechnologyUpdateSingleResponse, statusCode int, errFiels []utils.FieldError, err error) {
+	// 1. Fetch existing about data
+	oldData, err := GetTechnology(id)
+	if err != nil {
+		return result, http.StatusNotFound, nil, err
+	}
+
+	// set oldPath
+	oldPath := oldData.LogoFileName
+
+	// 2. Get new file (if uploaded)
+	_, err = c.FormFile("logo_file")
+	var newFileURL string
+	var newFileName string
+
+	if err == nil {
+		// Upload logo_file
+		logoData, logo_fileErrs, logoUploadErr := uploadService.HandleUploadedFile(
+			c,
+			"logo_file",
+			folderNameTechnology,
+			nil,                           // use default allowed extensions
+			2*1024*1024,                   // max 2MB
+			[]string{"extension", "size"}, // []string{"required", "extension", "size"}
+		)
+
+		if logo_fileErrs != nil {
+			err = fmt.Errorf("invalid logo_file")
+			return result, http.StatusBadRequest, logo_fileErrs, err
+		}
+
+		if logoUploadErr != nil {
+			err = fmt.Errorf("failed to upload logo_file")
+			return result, http.StatusInternalServerError, logo_fileErrs, err
+		}
+
+		newFileURL = logoData.FileURL
+		newFileName = logoData.FileName
+	} else {
+		newFileURL = oldData.LogoURL // keep existing if not updated
+		newFileName = oldData.LogoFileName
+	}
+
 	data := models.Technology{
 		Name:            req.Name,
 		DescriptionHTML: req.DescriptionHTML,
-		LogoURL:         req.LogoURL,
+		LogoURL:         newFileURL,
+		LogoFileName:    &newFileName,
 		IsMajor:         strings.ToUpper(req.IsMajor) == "Y",
 	}
 
-	var result dto.TechnologyUpdateSingleResponse
-
-	if err := config.DB.Where("id = ?", id).Updates(&data).Error; err != nil {
-		return result, err
+	if err := config.DB.Where("id = ?", id).
+		Updates(&data).Error; err != nil {
+		return result, http.StatusInternalServerError, nil, err
 	}
 
-	result = dto.TechnologyUpdateSingleResponse{
+	// 3. Optional: Delete old file from MinIO
+	if oldPath != newFileName {
+		err = uploadService.DeleteFromMinio(c.Request.Context(), oldPath) // ignore error or handle if needed
+		if err != nil {
+			utils.Log.Warn(err.Error())
+		}
+	}
+
+	return dto.TechnologyUpdateSingleResponse{
 		Name:            data.Name,
 		DescriptionHTML: data.DescriptionHTML,
-		LogoURL:         data.LogoURL,
+		LogoURL:         newFileURL,
+		LogoFileName:    newFileName,
 		IsMajor:         utils.BoolToYN(data.IsMajor),
-	}
-
-	return result, nil
+	}, http.StatusOK, nil, nil
 }
 
 func DeleteTechnology(id int) (dto.TechnologyDeleteSingleResponse, error) {

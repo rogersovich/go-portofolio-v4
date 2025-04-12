@@ -1,18 +1,20 @@
 package dto
 
 type TechnologyResponse struct {
-	ID              uint   `json:"id"`
-	Name            string `json:"name"`
-	DescriptionHTML string `json:"description"`
-	Logo            string `json:"logo"`
-	Major           string `json:"is_major"`
-	CreatedAt       string `json:"created_at"`
+	ID              uint    `json:"id"`
+	Name            string  `json:"name"`
+	DescriptionHTML string  `json:"description"`
+	LogoURL         string  `json:"logo_url"`
+	LogoFileName    *string `json:"logo_file_name"`
+	Major           string  `json:"is_major"`
+	CreatedAt       string  `json:"created_at"`
 }
 type TechnologySingleResponse struct {
 	ID              uint   `json:"id"`
 	Name            string `json:"name"`
 	DescriptionHTML string `json:"description"`
-	LogoURL         string `json:"logo"`
+	LogoURL         string `json:"logo_url"`
+	LogoFileName    string `json:"logo_file_name"`
 	IsMajor         string `json:"is_major"`
 	CreatedAt       string `json:"created_at"`
 }
@@ -20,7 +22,8 @@ type TechnologySingleResponse struct {
 type TechnologyUpdateSingleResponse struct {
 	Name            string `json:"name"`
 	DescriptionHTML string `json:"description"`
-	LogoURL         string `json:"logo"`
+	LogoURL         string `json:"logo_url"`
+	LogoFileName    string `json:"logo_file_name"`
 	IsMajor         string `json:"is_major"`
 }
 

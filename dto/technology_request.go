@@ -14,17 +14,17 @@ type TechnologyQueryParams struct {
 }
 
 type CreateTechnologyRequest struct {
-	Name            string `json:"name" binding:"required"`
-	DescriptionHTML string `json:"description" binding:"required"`
-	LogoURL         string `json:"logo" binding:"required"`
-	IsMajor         string `json:"is_major" binding:"required,oneof=Y N"` // use Y or N
+	Name            string      `json:"name" validate:"required"`
+	DescriptionHTML string      `json:"description" validate:"required"`
+	LogoFile        interface{} `json:"logo_file"`
+	IsMajor         string      `json:"is_major" validate:"required,oneof=Y N"` // use Y or N
 }
 
 type UpdateTechnologyRequest struct {
-	Name            string `json:"name" binding:"required"`
-	DescriptionHTML string `json:"description" binding:"required"`
-	LogoURL         string `json:"logo" binding:"required"`
-	IsMajor         string `json:"is_major" binding:"oneof=Y N"` // use Y or N
+	Id              int    `json:"id" validate:"required"`
+	Name            string `json:"name" validate:"required"`
+	DescriptionHTML string `json:"description" validate:"required"`
+	IsMajor         string `json:"is_major" validate:"oneof=Y N"` // use Y or N
 }
 
 type DeleteTechnologyRequest struct {
