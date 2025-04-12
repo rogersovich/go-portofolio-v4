@@ -30,7 +30,7 @@ func SeedTechnologies() {
 
 		// Optionally control some fields manually
 		tech.IsMajor = (i%2 == 0)
-		tech.LogoURL = "https://picsum.photos/200"
+		*tech.LogoURL = "https://picsum.photos/200"
 
 		if err := config.DB.Create(&tech).Error; err != nil {
 			fmt.Printf("❌ Failed to seed technology: %v\n", err)

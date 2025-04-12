@@ -125,9 +125,9 @@ func CreateAbout(req dto.CreateAboutRequest, c *gin.Context) (result dto.AboutSi
 
 	data := models.About{
 		Title:           req.Title,
-		DescriptionHTML: req.DescriptionHTML,
+		DescriptionHTML: &req.DescriptionHTML,
 		AvatarUrl:       avatarData.FileURL,
-		AvatarFileName:  avatarData.FileName,
+		AvatarFileName:  &avatarData.FileName,
 	}
 
 	if err := config.DB.Create(&data).Error; err != nil {
@@ -186,14 +186,14 @@ func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto
 		newFileName = avatarData.FileName
 	} else {
 		newFileURL = resAbout.AvatarURL // keep existing if not updated
-		newFileName = resAbout.AvatarFileName
+		newFileName = *resAbout.AvatarFileName
 	}
 
 	data := models.About{
 		Title:           req.Title,
-		DescriptionHTML: req.DescriptionHTML,
+		DescriptionHTML: &req.DescriptionHTML,
 		AvatarUrl:       newFileURL,
-		AvatarFileName:  newFileName,
+		AvatarFileName:  &newFileName,
 	}
 
 	if err := config.DB.Where("id = ?", id).
@@ -202,8 +202,8 @@ func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto
 	}
 
 	// 3. Optional: Delete old file from MinIO
-	if oldPath != newFileName {
-		err = uploadService.DeleteFromMinio(c.Request.Context(), oldPath) // ignore error or handle if needed
+	if oldPath != &newFileName {
+		err = uploadService.DeleteFromMinio(c.Request.Context(), *oldPath) // ignore error or handle if needed
 		if err != nil {
 			utils.Log.Warn(err.Error())
 		}

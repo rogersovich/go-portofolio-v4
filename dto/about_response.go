@@ -1,33 +1,33 @@
 package dto
 
 type AboutResponse struct {
-	ID              uint   `json:"id"`
-	Title           string `json:"title"`
-	DescriptionHTML string `json:"description"`
-	AvatarFileName  string `json:"avatar_file"`
-	AvatarURL       string `json:"avatar_url"`
-	CreatedAt       string `json:"created_at"`
+	ID              uint    `json:"id"`
+	Title           string  `json:"title"`
+	DescriptionHTML *string `json:"description"`
+	AvatarURL       string  `json:"avatar_url"`
+	AvatarFileName  *string `json:"avatar_file"`
+	CreatedAt       string  `json:"created_at"`
 }
 type AboutSingleResponse struct {
-	ID              uint   `json:"id"`
-	Title           string `json:"title"`
-	DescriptionHTML string `json:"description"`
-	AvatarURL       string `json:"avatar_url"`
-	AvatarFileName  string `json:"avatar_file"`
-	CreatedAt       string `json:"created_at"`
+	ID              uint    `json:"id"`
+	Title           string  `json:"title"`
+	DescriptionHTML *string `json:"description"`
+	AvatarURL       string  `json:"avatar_url"`
+	AvatarFileName  *string `json:"avatar_file"`
+	CreatedAt       string  `json:"created_at"`
 }
 
 type AboutUpdateSingleResponse struct {
-	Title           string `json:"title"`
-	DescriptionHTML string `json:"description"`
-	AvatarURL       string `json:"avatar_url"`
+	Title           string  `json:"title"`
+	DescriptionHTML *string `json:"description"`
+	AvatarURL       string  `json:"avatar_url"`
 }
 
 type AboutUpdateResponse struct {
-	Title           string `json:"title"`
-	DescriptionHTML string `json:"description"`
-	AvatarURL       string `json:"avatar_url"`
-	AvatarFileName  string `json:"avatar_file"`
+	Title           string  `json:"title"`
+	DescriptionHTML *string `json:"description"`
+	AvatarURL       string  `json:"avatar_url"`
+	AvatarFileName  *string `json:"avatar_file"`
 }
 
 type AboutDeleteSingleResponse struct {

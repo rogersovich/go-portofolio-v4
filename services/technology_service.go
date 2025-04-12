@@ -107,7 +107,7 @@ func GetTechnology(id int) (dto.TechnologySingleResponse, error) {
 		Name:            tech.Name,
 		DescriptionHTML: tech.DescriptionHTML,
 		LogoURL:         tech.LogoURL,
-		LogoFileName:    *tech.LogoFileName,
+		LogoFileName:    tech.LogoFileName,
 		IsMajor:         utils.BoolToYN(tech.IsMajor),
 		CreatedAt:       tech.CreatedAt.Format("2006-01-02"),
 	}, nil
@@ -136,8 +136,8 @@ func CreateTechnology(req dto.CreateTechnologyRequest, c *gin.Context) (result d
 
 	data := models.Technology{
 		Name:            req.Name,
-		DescriptionHTML: req.DescriptionHTML,
-		LogoURL:         logoFile.FileURL,
+		DescriptionHTML: &req.DescriptionHTML,
+		LogoURL:         &logoFile.FileURL,
 		LogoFileName:    &logoFile.FileName,
 		IsMajor:         strings.ToUpper(req.IsMajor) == "Y",
 	}
@@ -151,7 +151,7 @@ func CreateTechnology(req dto.CreateTechnologyRequest, c *gin.Context) (result d
 		Name:            data.Name,
 		DescriptionHTML: data.DescriptionHTML,
 		LogoURL:         data.LogoURL,
-		LogoFileName:    *data.LogoFileName,
+		LogoFileName:    data.LogoFileName,
 		IsMajor:         utils.BoolToYN(data.IsMajor),
 		CreatedAt:       data.CreatedAt.Format("2006-01-02"),
 	}
@@ -198,14 +198,14 @@ func UpdateTechnology(req dto.UpdateTechnologyRequest, id int, c *gin.Context) (
 		newFileURL = logoData.FileURL
 		newFileName = logoData.FileName
 	} else {
-		newFileURL = oldData.LogoURL // keep existing if not updated
-		newFileName = oldData.LogoFileName
+		newFileURL = *oldData.LogoURL // keep existing if not updated
+		newFileName = *oldData.LogoFileName
 	}
 
 	data := models.Technology{
 		Name:            req.Name,
-		DescriptionHTML: req.DescriptionHTML,
-		LogoURL:         newFileURL,
+		DescriptionHTML: &req.DescriptionHTML,
+		LogoURL:         &newFileURL,
 		LogoFileName:    &newFileName,
 		IsMajor:         strings.ToUpper(req.IsMajor) == "Y",
 	}
@@ -216,8 +216,8 @@ func UpdateTechnology(req dto.UpdateTechnologyRequest, id int, c *gin.Context) (
 	}
 
 	// 3. Optional: Delete old file from MinIO
-	if oldPath != newFileName {
-		err = uploadService.DeleteFromMinio(c.Request.Context(), oldPath) // ignore error or handle if needed
+	if oldPath != &newFileName {
+		err = uploadService.DeleteFromMinio(c.Request.Context(), *oldPath) // ignore error or handle if needed
 		if err != nil {
 			utils.Log.Warn(err.Error())
 		}
@@ -226,8 +226,8 @@ func UpdateTechnology(req dto.UpdateTechnologyRequest, id int, c *gin.Context) (
 	return dto.TechnologyUpdateSingleResponse{
 		Name:            data.Name,
 		DescriptionHTML: data.DescriptionHTML,
-		LogoURL:         newFileURL,
-		LogoFileName:    newFileName,
+		LogoURL:         &newFileURL,
+		LogoFileName:    &newFileName,
 		IsMajor:         utils.BoolToYN(data.IsMajor),
 	}, http.StatusOK, nil, nil
 }
