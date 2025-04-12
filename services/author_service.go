@@ -12,9 +12,9 @@ import (
 	"github.com/rogersovich/go-portofolio-v4/utils"
 )
 
-var folderNameAbout = "about"
+var folderNameAuthor = "author"
 
-func GetAllAbouts(params dto.AboutQueryParams) ([]dto.AboutResponse, error) {
+func GetAllAuthors(params dto.AuthorQueryParams) ([]dto.AuthorResponse, error) {
 	db, _ := config.DB.DB()
 
 	var (
@@ -22,13 +22,12 @@ func GetAllAbouts(params dto.AboutQueryParams) ([]dto.AboutResponse, error) {
 		args       []interface{}
 	)
 
-	query := `SELECT id, title, avatar_url, avatar_file_name, description_html, created_at FROM abouts`
+	query := `SELECT id, name, avatar_url, avatar_file_name, created_at FROM authors`
 
 	// 🔍 Filters
 
 	filters := []utils.SQLFilter{
-		{Column: "title", Value: params.Title, Op: "LIKE"},
-		{Column: "description_html", Value: params.Description, Op: "LIKE"},
+		{Column: "name", Value: params.Name, Op: "LIKE"},
 	}
 
 	if params.IsDelete == "N" || params.IsDelete == "" {
@@ -60,54 +59,52 @@ func GetAllAbouts(params dto.AboutQueryParams) ([]dto.AboutResponse, error) {
 	}
 	defer rows.Close()
 
-	var abouts []models.About
+	var authors []models.Author
 
 	for rows.Next() {
-		var rowAbout models.About
-		if err := rows.Scan(&rowAbout.ID, &rowAbout.Title, &rowAbout.AvatarUrl, &rowAbout.AvatarFileName, &rowAbout.DescriptionHTML, &rowAbout.CreatedAt); err != nil {
+		var rowAuthor models.Author
+		if err := rows.Scan(&rowAuthor.ID, &rowAuthor.Name, &rowAuthor.AvatarUrl, &rowAuthor.AvatarFileName, &rowAuthor.CreatedAt); err != nil {
 			utils.LogWarning(err.Error(), query)
 			return nil, err
 		}
-		abouts = append(abouts, rowAbout)
+		authors = append(authors, rowAuthor)
 	}
 
-	var response []dto.AboutResponse
-	for _, rowAbout := range abouts {
-		response = append(response, dto.AboutResponse{
-			ID:              rowAbout.ID,
-			Title:           rowAbout.Title,
-			AvatarURL:       rowAbout.AvatarUrl,
-			AvatarFileName:  rowAbout.AvatarFileName,
-			DescriptionHTML: rowAbout.DescriptionHTML,
-			CreatedAt:       rowAbout.CreatedAt.Format("2006-01-02"),
+	var responses []dto.AuthorResponse
+	for _, rowAuthor := range authors {
+		responses = append(responses, dto.AuthorResponse{
+			ID:             rowAuthor.ID,
+			Name:           rowAuthor.Name,
+			AvatarURL:      rowAuthor.AvatarUrl,
+			AvatarFileName: rowAuthor.AvatarFileName,
+			CreatedAt:      rowAuthor.CreatedAt.Format("2006-01-02"),
 		})
 	}
 
-	return response, nil
+	return responses, nil
 }
 
-func GetAbout(id int) (dto.AboutSingleResponse, error) {
-	var about models.About
-	if err := config.DB.First(&about, id).Error; err != nil {
-		return dto.AboutSingleResponse{}, err
+func GetAuthor(id int) (dto.AuthorSingleResponse, error) {
+	var response models.Author
+	if err := config.DB.First(&response, id).Error; err != nil {
+		return dto.AuthorSingleResponse{}, err
 	}
 
-	return dto.AboutSingleResponse{
-		ID:              about.ID,
-		Title:           about.Title,
-		DescriptionHTML: about.DescriptionHTML,
-		AvatarURL:       about.AvatarUrl,
-		AvatarFileName:  about.AvatarFileName,
-		CreatedAt:       about.CreatedAt.Format("2006-01-02"),
+	return dto.AuthorSingleResponse{
+		ID:             response.ID,
+		Name:           response.Name,
+		AvatarURL:      response.AvatarUrl,
+		AvatarFileName: response.AvatarFileName,
+		CreatedAt:      response.CreatedAt.Format("2006-01-02"),
 	}, nil
 }
 
-func CreateAbout(req dto.CreateAboutRequest, c *gin.Context) (result dto.AboutSingleResponse, statusCode int, errFiels []utils.FieldError, err error) {
+func CreateAuthor(req dto.CreateAuthorRequest, c *gin.Context) (result dto.AuthorSingleResponse, statusCode int, errFiels []utils.FieldError, err error) {
 	// Upload avatar_file
 	avatarData, avatarErrs, avatarUploadErr := uploadService.HandleUploadedFile(
 		c,
 		"avatar_file",
-		folderNameAbout,
+		folderNameAuthor,
 		nil,         // use default allowed extensions
 		2*1024*1024, // max 2MB
 		nil,         // []string{"required", "extension", "size"}
@@ -123,40 +120,38 @@ func CreateAbout(req dto.CreateAboutRequest, c *gin.Context) (result dto.AboutSi
 		return result, http.StatusInternalServerError, avatarErrs, err
 	}
 
-	data := models.About{
-		Title:           req.Title,
-		DescriptionHTML: &req.DescriptionHTML,
-		AvatarUrl:       avatarData.FileURL,
-		AvatarFileName:  &avatarData.FileName,
+	data := models.Author{
+		Name:           req.Name,
+		AvatarUrl:      avatarData.FileURL,
+		AvatarFileName: &avatarData.FileName,
 	}
 
 	if err := config.DB.Create(&data).Error; err != nil {
 		return result, http.StatusInternalServerError, nil, err
 	}
 
-	result = dto.AboutSingleResponse{
-		ID:              data.ID,
-		Title:           data.Title,
-		DescriptionHTML: data.DescriptionHTML,
-		AvatarURL:       data.AvatarUrl,
-		AvatarFileName:  data.AvatarFileName,
-		CreatedAt:       data.CreatedAt.Format("2006-01-02"),
+	result = dto.AuthorSingleResponse{
+		ID:             data.ID,
+		Name:           data.Name,
+		AvatarURL:      data.AvatarUrl,
+		AvatarFileName: data.AvatarFileName,
+		CreatedAt:      data.CreatedAt.Format("2006-01-02"),
 	}
 
 	return result, http.StatusOK, nil, nil
 }
 
-func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto.AboutUpdateResponse, statusCode int, errFiels []utils.FieldError, err error) {
-	// 1. Fetch existing about data
-	resAbout, err := GetAbout(id)
+func UpdateAuthor(req dto.UpdateAuthorRequest, id int, c *gin.Context) (result dto.AuthorUpdateResponse, statusCode int, errFiels []utils.FieldError, err error) {
+	// 1. Fetch existing Author data
+	resAuthor, err := GetAuthor(id)
 	if err != nil {
 		return result, http.StatusNotFound, nil, err
 	}
 
 	// set oldPath
 	oldPath := ""
-	if resAbout.AvatarFileName != nil {
-		oldPath = *resAbout.AvatarFileName
+	if resAuthor.AvatarFileName != nil {
+		oldPath = *resAuthor.AvatarFileName
 	}
 
 	// 2. Get new file (if uploaded)
@@ -169,7 +164,7 @@ func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto
 		avatarData, avatarErrs, avatarUploadErr := uploadService.HandleUploadedFile(
 			c,
 			"avatar_file",
-			folderNameAbout,
+			folderNameAuthor,
 			nil,                           // use default allowed extensions
 			2*1024*1024,                   // max 2MB
 			[]string{"extension", "size"}, // []string{"required", "extension", "size"}
@@ -188,15 +183,14 @@ func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto
 		newFileURL = avatarData.FileURL
 		newFileName = avatarData.FileName
 	} else {
-		newFileURL = resAbout.AvatarURL // keep existing if not updated
-		newFileName = *resAbout.AvatarFileName
+		newFileURL = resAuthor.AvatarURL // keep existing if not updated
+		newFileName = *resAuthor.AvatarFileName
 	}
 
-	data := models.About{
-		Title:           req.Title,
-		DescriptionHTML: &req.DescriptionHTML,
-		AvatarUrl:       newFileURL,
-		AvatarFileName:  &newFileName,
+	data := models.Author{
+		Name:           req.Name,
+		AvatarUrl:      newFileURL,
+		AvatarFileName: &newFileName,
 	}
 
 	if err := config.DB.Where("id = ?", id).
@@ -212,30 +206,29 @@ func UpdateAbout(req dto.UpdateAboutRequest, id int, c *gin.Context) (result dto
 		}
 	}
 
-	return dto.AboutUpdateResponse{
-		Title:           data.Title,
-		DescriptionHTML: data.DescriptionHTML,
-		AvatarURL:       data.AvatarUrl,
-		AvatarFileName:  data.AvatarFileName,
+	return dto.AuthorUpdateResponse{
+		Name:           data.Name,
+		AvatarURL:      data.AvatarUrl,
+		AvatarFileName: data.AvatarFileName,
 	}, http.StatusOK, nil, nil
 }
 
-func DeleteAbout(id int, c *gin.Context) (statusCode int, err error) {
-	// 1. Fetch existing about data
-	_, err = GetAbout(id)
+func DeleteAuthor(id int, c *gin.Context) (statusCode int, err error) {
+	// 1. Fetch existing Author data
+	_, err = GetAuthor(id)
 	if err != nil {
 		return http.StatusNotFound, err
 	}
 
 	// 2. Optional: Delete old file from MinIO
-	// oldPath := resAbout.AvatarFileName
+	// oldPath := resAuthor.AvatarFileName
 	// err = uploadService.DeleteFromMinio(c.Request.Context(), oldPath)
 	// if err != nil {
 	// 	return http.StatusInternalServerError, err
 	// }
 
 	// 3. Delete data
-	if err := config.DB.Delete(&models.About{}, id).Error; err != nil {
+	if err := config.DB.Delete(&models.Author{}, id).Error; err != nil {
 		return http.StatusInternalServerError, err
 	}
 

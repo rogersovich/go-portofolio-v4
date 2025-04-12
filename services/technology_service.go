@@ -167,7 +167,10 @@ func UpdateTechnology(req dto.UpdateTechnologyRequest, id int, c *gin.Context) (
 	}
 
 	// set oldPath
-	oldPath := oldData.LogoFileName
+	oldPath := ""
+	if oldData.LogoFileName != nil {
+		oldPath = *oldData.LogoFileName
+	}
 
 	// 2. Get new file (if uploaded)
 	_, err = c.FormFile("logo_file")
@@ -216,8 +219,8 @@ func UpdateTechnology(req dto.UpdateTechnologyRequest, id int, c *gin.Context) (
 	}
 
 	// 3. Optional: Delete old file from MinIO
-	if oldPath != &newFileName {
-		err = uploadService.DeleteFromMinio(c.Request.Context(), *oldPath) // ignore error or handle if needed
+	if oldPath != newFileName {
+		err = uploadService.DeleteFromMinio(c.Request.Context(), oldPath) // ignore error or handle if needed
 		if err != nil {
 			utils.Log.Warn(err.Error())
 		}
