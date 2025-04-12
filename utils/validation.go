@@ -61,7 +61,12 @@ func ValidateStruct(c *gin.Context, requestStruct interface{}, bindErr error) bo
 			// Look up the custom error message or fallback to default message
 			errorMessage, exists := customMessages[messageKey]
 			if !exists {
-				errorMessage = fmt.Sprintf("%s failed on '%s'", jsonField, fieldError.Tag())
+				if fieldError.Tag() == "oneof" {
+					params := formatTypeOf(fieldError.Param())
+					errorMessage = fmt.Sprintf("%s must be one of '%s'", jsonField, params)
+				} else {
+					errorMessage = fmt.Sprintf("%s failed on '%s'", jsonField, fieldError.Tag())
+				}
 			}
 
 			// Append the error in the desired format
@@ -148,4 +153,9 @@ func GenerateFieldErrorResponse(field, message string) []FieldError {
 		},
 	}
 	return errors
+}
+
+func formatTypeOf(typeof string) string {
+	parts := strings.Fields(typeof)  // splits by any whitespace
+	return strings.Join(parts, ", ") // joins with ", "
 }
