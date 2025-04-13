@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -14,20 +15,6 @@ type SQLFilter struct {
 	Column string
 	Value  interface{}
 	Op     string // e.g. "LIKE", "=", "IS NULL"
-}
-
-func BoolToYN(val bool) string {
-	if val {
-		return "Y"
-	}
-	return "N"
-}
-
-func StringBoolToYN(val string) string {
-	if val == "1" {
-		return "Y"
-	}
-	return "N"
 }
 
 // BindJSON parses and validates JSON, with custom error responses for type issues
@@ -160,4 +147,14 @@ func BuildSQLInClause[intType ~int | ~int64 | ~string](values []intType) (string
 	}
 
 	return strings.Join(placeholders, ","), args
+}
+
+func ParseNullableInt(s *string) *int {
+	if s == nil || *s == "" {
+		return nil
+	}
+	if i, err := strconv.Atoi(*s); err == nil {
+		return &i
+	}
+	return nil
 }

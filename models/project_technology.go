@@ -8,8 +8,8 @@ import (
 
 type ProjectTechnology struct {
 	ID           uint `gorm:"primaryKey" `
-	ProjectID    int
-	TechnologyID int
+	ProjectID    int  `gorm:"column:project_id"`
+	TechnologyID int  `gorm:"column:technology_id"`
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	DeletedAt    gorm.DeletedAt `gorm:"index" `

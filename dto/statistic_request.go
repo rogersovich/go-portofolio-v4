@@ -17,6 +17,12 @@ type CreateStatisticRequest struct {
 	Type  string `json:"type" binding:"required,oneof=Project Blog"`
 }
 
+type CreateStatisticProjectRequest struct {
+	Likes *int   `json:"likes"`
+	Views *int   `json:"views"`
+	Type  string `json:"type" binding:"required,oneof=Project Blog"`
+}
+
 type UpdateStatisticRequest struct {
 	Id    int    `json:"id" binding:"required,numeric"`
 	Likes *int   `json:"likes" binding:"required"`

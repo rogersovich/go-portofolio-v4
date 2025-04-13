@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -45,7 +46,53 @@ func CheckProjectTechnology(technology_ids []string) error {
 	return nil
 }
 
-func CreateProject(req dto.CreateProjectRequest, c *gin.Context) (result dto.ProjectResponse, statusCode int, errFiels []utils.FieldError, err error) {
+func CheckProjectContentImage(content_images []string) error {
+	db, _ := config.DB.DB()
+
+	// Build placeholder string like "?,?,?,?"
+	inClause, args := utils.BuildSQLInClause(content_images)
+
+	// Build query
+	query := fmt.Sprintf("SELECT id FROM project_content_images WHERE image_url IN (%s)", inClause)
+
+	// Execute query
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		utils.LogError(err.Error(), query)
+		return fmt.Errorf("query error: %w", err)
+	}
+	defer rows.Close()
+
+	// Check if all technology_ids exist
+	count := 0
+	for rows.Next() {
+		count++
+	}
+
+	if count != len(content_images) {
+		return fmt.Errorf("invalid content_images")
+	}
+
+	return nil
+}
+
+func CreateProject(req dto.CreateProjectRequest, c *gin.Context) (result dto.ProjectCreateResponse, statusCode int, errFiels []utils.FieldError, err error) {
+	tx := config.DB.Begin()
+
+	var likes int = 0
+	var views int = 0
+	resStatistic := models.Statistic{
+		Likes: likes,
+		Views: views,
+		Type:  "Project",
+	}
+
+	if err := config.DB.Create(&resStatistic).Error; err != nil {
+		tx.Rollback()
+		utils.Error(c, http.StatusInternalServerError, err.Error())
+		return result, http.StatusInternalServerError, nil, err
+	}
+
 	// set field
 	imageFieldName := "image_file"
 	// Upload avatar_file
@@ -86,17 +133,54 @@ func CreateProject(req dto.CreateProjectRequest, c *gin.Context) (result dto.Pro
 		Summary:       req.Summary,
 		Status:        req.Status,
 		PublishedAt:   publishedAt,
+		StatisticId:   int(resStatistic.ID),
 	}
 
 	if err := config.DB.Create(&data).Error; err != nil {
+		tx.Rollback()
+		utils.Error(c, http.StatusInternalServerError, err.Error())
 		return result, http.StatusInternalServerError, nil, err
 	}
 
-	result = dto.ProjectResponse{
+	// INSERT to TABLE PROJECT TECHONOLOGIES
+	var technologies []models.ProjectTechnology
+
+	for _, technology_id := range req.TechnologyIds {
+		TechnologyId, _ := strconv.Atoi(technology_id)
+		technologies = append(technologies, models.ProjectTechnology{
+			ProjectID:    1,
+			TechnologyID: TechnologyId,
+		})
+	}
+
+	if err := config.DB.Table("project_technologies").Create(&technologies).Error; err != nil {
+		tx.Rollback()
+		utils.Error(c, http.StatusInternalServerError, err.Error())
+		return result, http.StatusInternalServerError, nil, err
+	}
+
+	// UPDATE to TABLE PROJECT CONTENT IMAGES
+	err = config.DB.Model(&models.ProjectContentImage{}).
+		Where("image_url IN ?", req.ContentImages).
+		Update("project_id", data.ID).Error
+
+	if err != nil {
+		tx.Rollback()
+		utils.Error(c, http.StatusInternalServerError, err.Error())
+		return result, http.StatusInternalServerError, nil, err
+	}
+
+	tx.Commit()
+	result = dto.ProjectCreateResponse{
 		ID:            data.ID,
 		Title:         data.Title,
+		Description:   data.Description,
 		ImageURL:      *data.ImageURL,
 		ImageFileName: *data.ImageFileName,
+		RepositoryURL: data.RepositoryURL,
+		Summary:       data.Summary,
+		Status:        data.Status,
+		StatisticId:   int(resStatistic.ID),
 		CreatedAt:     data.CreatedAt.Format("2006-01-02"),
 	}
 

@@ -57,15 +57,21 @@ func CreateProject(c *gin.Context) {
 		return
 	}
 
-	// response, statusCode, errField, err := services.CreateProject(req, c)
-	// if err != nil {
-	// 	if statusCode == http.StatusBadRequest {
-	// 		utils.ErrorValidation(c, http.StatusBadRequest, err.Error(), errField)
-	// 	} else {
-	// 		utils.Error(c, http.StatusInternalServerError, err.Error())
-	// 	}
-	// 	return
-	// }
+	err = services.CheckProjectContentImage(req.ContentImages)
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
 
-	utils.Success(c, "Success to create data", req)
+	response, statusCode, errField, err := services.CreateProject(req, c)
+	if err != nil {
+		if statusCode == http.StatusBadRequest {
+			utils.ErrorValidation(c, http.StatusBadRequest, err.Error(), errField)
+		} else {
+			utils.Error(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	utils.Success(c, "Success to create data", response)
 }

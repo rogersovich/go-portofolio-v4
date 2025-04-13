@@ -11,6 +11,19 @@ type ProjectResponse struct {
 	CreatedAt     string `json:"created_at"`
 }
 
+type ProjectCreateResponse struct {
+	ID            uint   `json:"id"`
+	Title         string `json:"title"`
+	Description   string `json:"description"`
+	ImageURL      string `json:"image_url"`
+	ImageFileName string `json:"image_file_name"`
+	RepositoryURL string `json:"repository_url"`
+	Summary       string `json:"summary"`
+	Status        string `json:"status"`
+	StatisticId   int    `json:"statistic_id"`
+	CreatedAt     string `json:"created_at"`
+}
+
 type ProjectUpdateSingleResponse struct {
 	Title         string `json:"title"`
 	ImageURL      string `json:"image_url"`
