@@ -21,8 +21,8 @@ func main() {
 	routes.RegisterTechnologyRoutes(r)
 	routes.RegisterAboutRoutes(r)
 	routes.RegisterAuthorRoutes(r)
-	routes.RegisterProjectFeatureRoutes(r)
 	routes.RegisterStatisticRoutes(r)
+	routes.RegisterProjectRoutes(r)
 
 	r.NoRoute(func(c *gin.Context) {
 		utils.Error(c, http.StatusNotFound, "Route not found")

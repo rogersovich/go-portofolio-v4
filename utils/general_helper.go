@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"errors"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -31,4 +33,54 @@ func StringOrDefault(s *string, def string) *string {
 		return &def
 	}
 	return s
+}
+
+// Converts a slice of string (like from c.PostFormArray) to a slice of int
+func FormArrayToIntSlice(strs []string, field string, is_required bool) ([]int, error) {
+	var result []int
+
+	for _, s := range strs {
+		if s == "" {
+			continue
+		}
+
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			return nil, errors.New(field + "invalid integer value in array: " + s)
+		}
+		result = append(result, i)
+	}
+
+	if is_required && len(result) == 0 {
+		return nil, errors.New(field + " array must not be empty")
+	}
+
+	// Ensure empty slice (not nil) is returned if not required
+	if !is_required && len(result) == 0 {
+		return []int{}, nil
+	}
+
+	return result, nil
+}
+
+// Validates that a string array is not empty and doesn't contain only empty strings
+func ValidateFormArrayNotEmpty(strs []string, field string, is_required bool) ([]string, error) {
+	var result []string
+
+	for _, s := range strs {
+		if s != "" {
+			result = append(result, s)
+		}
+	}
+
+	if is_required && len(result) == 0 {
+		return nil, errors.New(field + "array must not be empty")
+	}
+
+	// Ensure empty slice (not nil) is returned if not required
+	if !is_required && len(result) == 0 {
+		return []string{}, nil
+	}
+
+	return result, nil
 }

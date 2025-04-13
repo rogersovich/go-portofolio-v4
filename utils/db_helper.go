@@ -148,3 +148,16 @@ func BuildOrderAndPagination(order, sort string, page, limit int) string {
 
 	return fmt.Sprintf(" ORDER BY %s %s LIMIT %d OFFSET %d", order, sort, limit, offset)
 }
+
+// BuildSQLInClause generates a string of "?, ?, ?" placeholders and a slice of interface{} args
+func BuildSQLInClause[intType ~int | ~int64 | ~string](values []intType) (string, []interface{}) {
+	placeholders := make([]string, len(values))
+	args := make([]interface{}, len(values))
+
+	for i, v := range values {
+		placeholders[i] = "?"
+		args[i] = v
+	}
+
+	return strings.Join(placeholders, ","), args
+}
