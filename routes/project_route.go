@@ -10,8 +10,8 @@ func RegisterProjectRoutes(r *gin.Engine) {
 	{
 		project := api.Group("/projects")
 		{
-			// project.GET("", controllers.GetAllProjects)
-			// project.GET("/:id", controllers.GetProject)
+			project.GET("", controllers.GetAllProjects)
+			project.GET("/:id", controllers.GetProject)
 			project.POST("/store", controllers.CreateProject)
 			// project.POST("/update", controllers.UpdateProject)
 			// project.POST("/delete", controllers.DeleteProject)

@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -36,7 +38,7 @@ func StringOrDefault(s *string, def string) *string {
 }
 
 // Converts a slice of string (like from c.PostFormArray) to a slice of int
-func FormArrayToIntSlice(strs []string, field string, is_required bool) ([]int, error) {
+func ValidateFormArrayToIntSlice(strs []string, field string, is_required bool) ([]int, error) {
 	var result []int
 
 	for _, s := range strs {
@@ -64,7 +66,7 @@ func FormArrayToIntSlice(strs []string, field string, is_required bool) ([]int, 
 }
 
 // Validates that a string array is not empty and doesn't contain only empty strings
-func ValidateFormArrayNotEmpty(strs []string, field string, is_required bool) ([]string, error) {
+func ValidateFormArrayString(strs []string, field string, is_required bool) ([]string, error) {
 	var result []string
 
 	for _, s := range strs {
@@ -97,4 +99,9 @@ func StringBoolToYN(val string) string {
 		return "Y"
 	}
 	return "N"
+}
+
+func PrintJSON(v any) {
+	jsonBytes, _ := json.MarshalIndent(v, "", "  ")
+	fmt.Println(string(jsonBytes))
 }

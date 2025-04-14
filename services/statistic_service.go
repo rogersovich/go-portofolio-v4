@@ -89,8 +89,8 @@ func GetStatistic(id int) (dto.StatisticSingleResponse, error) {
 
 	return dto.StatisticSingleResponse{
 		ID:        response.ID,
-		Likes:     response.Likes,
-		Views:     response.Views,
+		Likes:     *response.Likes,
+		Views:     *response.Views,
 		Type:      response.Type,
 		CreatedAt: response.CreatedAt.Format("2006-01-02"),
 	}, nil
@@ -98,8 +98,8 @@ func GetStatistic(id int) (dto.StatisticSingleResponse, error) {
 
 func CreateStatistic(req dto.CreateStatisticRequest) (result dto.StatisticSingleResponse, err error) {
 	data := models.Statistic{
-		Likes: *req.Likes,
-		Views: *req.Views,
+		Likes: req.Likes,
+		Views: req.Views,
 		Type:  req.Type,
 	}
 
@@ -109,8 +109,8 @@ func CreateStatistic(req dto.CreateStatisticRequest) (result dto.StatisticSingle
 
 	result = dto.StatisticSingleResponse{
 		ID:        data.ID,
-		Likes:     data.Likes,
-		Views:     data.Views,
+		Likes:     *data.Likes,
+		Views:     *data.Views,
 		Type:      data.Type,
 		CreatedAt: data.CreatedAt.Format("2006-01-02"),
 	}
@@ -120,8 +120,8 @@ func CreateStatistic(req dto.CreateStatisticRequest) (result dto.StatisticSingle
 
 func UpdateStatistic(req dto.UpdateStatisticRequest, id int) (result dto.StatisticUpdateResponse, err error) {
 	data := models.Statistic{
-		Likes: *req.Likes,
-		Views: *req.Views,
+		Likes: req.Likes,
+		Views: req.Views,
 		Type:  req.Type,
 	}
 
@@ -131,8 +131,8 @@ func UpdateStatistic(req dto.UpdateStatisticRequest, id int) (result dto.Statist
 	}
 
 	result = dto.StatisticUpdateResponse{
-		Likes: data.Likes,
-		Views: data.Views,
+		Likes: *data.Likes,
+		Views: *data.Views,
 		Type:  data.Type,
 	}
 

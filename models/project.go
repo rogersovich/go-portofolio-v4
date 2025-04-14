@@ -8,7 +8,8 @@ import (
 
 type Project struct {
 	ID            uint `gorm:"primaryKey" `
-	StatisticId   int
+	StatisticId   uint
+	Statistic     Statistic
 	Title         string  `gorm:"type:varchar(255)" `
 	Description   string  `gorm:"type:text"`
 	ImageURL      *string `gorm:"type:varchar(500)" `

@@ -8,8 +8,8 @@ import (
 
 type Statistic struct {
 	ID        uint `gorm:"primaryKey" `
-	Likes     int  `gorm:"type:int" `
-	Views     int  `gorm:"type:int" `
+	Likes     *int `gorm:"type:int" `
+	Views     *int `gorm:"type:int" `
 	Type      string
 	CreatedAt time.Time
 	UpdatedAt time.Time

@@ -2,12 +2,64 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rogersovich/go-portofolio-v4/dto"
 	"github.com/rogersovich/go-portofolio-v4/services"
 	"github.com/rogersovich/go-portofolio-v4/utils"
 )
+
+func GetAllProjects(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	if page < 1 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	params := dto.ProjectQueryParams{
+		Sort:        c.DefaultQuery("sort", "ASC"),
+		Order:       c.DefaultQuery("order", "id"),
+		Title:       c.Query("title"),
+		Description: c.Query("description"),
+		IsDelete:    c.Query("is_delete"), // expects "Y" or "N"
+		CreatedFrom: c.Query("created_from"),
+		CreatedTo:   c.Query("created_to"),
+		Page:        page,
+		Limit:       limit,
+	}
+
+	response, err := services.GetAllProjects(params)
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Success(c, "Success fetched data", response)
+}
+
+func GetProject(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	tech, err := services.GetProject(uint(id))
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Success(c, "Success fetched data", tech)
+}
 
 func CreateProject(c *gin.Context) {
 	// Get text fields
@@ -21,13 +73,13 @@ func CreateProject(c *gin.Context) {
 	technology_ids := c.PostFormArray("technology_ids[]")
 	content_images := c.PostFormArray("content_images[]")
 
-	technology_ids_validated, err := utils.ValidateFormArrayNotEmpty(technology_ids, "technology_ids", true)
+	technology_ids_validated, err := utils.ValidateFormArrayString(technology_ids, "technology_ids", true)
 	if err != nil {
 		utils.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	content_images_validated, err := utils.ValidateFormArrayNotEmpty(content_images, "content_images", false)
+	content_images_validated, err := utils.ValidateFormArrayString(content_images, "content_images", false)
 	if err != nil {
 		utils.Error(c, http.StatusBadRequest, err.Error())
 		return

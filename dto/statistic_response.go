@@ -2,8 +2,8 @@ package dto
 
 type StatisticResponse struct {
 	ID        uint   `json:"id"`
-	Likes     int    `json:"likes"`
-	Views     int    `json:"views"`
+	Likes     *int   `json:"likes"`
+	Views     *int   `json:"views"`
 	Type      string `json:"type"`
 	CreatedAt string `json:"created_at"`
 }

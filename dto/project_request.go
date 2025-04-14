@@ -1,5 +1,17 @@
 package dto
 
+type ProjectQueryParams struct {
+	Sort        string
+	Order       string
+	Title       string
+	Description string
+	IsDelete    string // "Y" or "N"
+	CreatedFrom string
+	CreatedTo   string
+	Page        int
+	Limit       int
+}
+
 type CreateProjectRequest struct {
 	Title         string   `json:"title" validate:"required"`
 	Description   string   `json:"description" validate:"required"`
