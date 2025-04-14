@@ -17,6 +17,16 @@ type ProjectTechnologyDTO struct {
 	Name string `json:"tech_name"`
 }
 
+type ProjectDTO struct {
+	ID            int     `json:"id"`
+	Title         string  `json:"title"`
+	Status        string  `json:"status"`
+	Summary       string  `json:"summary"`
+	ImageURL      string  `json:"image_url"`
+	RepositoryURL string  `json:"repository_url"`
+	PublishedAt   *string `json:"published_at"`
+}
+
 type ProjectGetAllDTO struct {
 	ID            int                    `json:"id"`
 	Title         string                 `json:"title"`
@@ -26,6 +36,22 @@ type ProjectGetAllDTO struct {
 	RepositoryURL string                 `json:"repository_url"`
 	PublishedAt   *string                `json:"published_at"`
 	Technologies  []ProjectTechnologyDTO `json:"technologies"`
+}
+
+type ProjectOnlyRawResponse struct {
+	ID            uint    `json:"project_id"`
+	Title         string  `json:"title"`
+	Status        string  `json:"status"`
+	Summary       string  `json:"summary"`
+	ImageURL      string  `json:"image_url"`
+	RepositoryURL string  `json:"repository_url"`
+	PublishedAt   *string `json:"published_at"`
+}
+
+type ProjectTechOnlyRawResponse struct {
+	ProjectID uint
+	TechID    uint
+	TechName  string
 }
 
 type ProjectSingleResponse struct {

@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -125,6 +126,68 @@ func GetAllProjects(params dto.ProjectQueryParams) ([]dto.ProjectGetAllDTO, erro
 	}
 
 	return result, nil
+}
+
+func GetAllWithSplitQuery() ([]dto.ProjectGetAllDTO, error) {
+	// db, _ := config.DB.DB()
+
+	var projects []dto.ProjectDTO
+	err := config.DB.Raw(`
+		SELECT 
+			id, title, status, summary, image_url, repository_url, published_at 
+		FROM projects 
+		LIMIT 100`).Scan(&projects).Error
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	projectIDs := make([]interface{}, 0, len(projects))
+	for _, p := range projects {
+		projectIDs = append(projectIDs, p.ID)
+	}
+
+	var projectTechList []dto.ProjectTechOnlyRawResponse
+
+	err = config.DB.Raw(`
+		SELECT pt.project_id, t.id AS tech_id, t.name AS tech_name
+		FROM project_technologies pt
+		JOIN technologies t ON pt.technology_id = t.id
+		WHERE pt.project_id IN (?)
+	`, projectIDs).Scan(&projectTechList).Error
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	projectMap := make(map[int]dto.ProjectGetAllDTO)
+	for _, p := range projects {
+		projectMap[p.ID] = dto.ProjectGetAllDTO{
+			ID:            int(p.ID),
+			Title:         p.Title,
+			Status:        p.Status,
+			Summary:       p.Summary,
+			ImageURL:      p.ImageURL,
+			RepositoryURL: p.RepositoryURL,
+			PublishedAt:   p.PublishedAt,
+			Technologies:  []dto.ProjectTechnologyDTO{},
+		}
+	}
+
+	for _, pt := range projectTechList {
+		pr := projectMap[int(pt.ProjectID)]
+		pr.Technologies = append(pr.Technologies, dto.ProjectTechnologyDTO{
+			ID:   int(pt.ProjectID),
+			Name: pt.TechName,
+		})
+		projectMap[int(pt.ProjectID)] = pr
+	}
+
+	var finalResponse []dto.ProjectGetAllDTO
+	for _, v := range projectMap {
+		finalResponse = append(finalResponse, v)
+	}
+
+	return finalResponse, nil
 }
 
 func GetProject(id uint) (dto.ProjectSingleResponse, error) {

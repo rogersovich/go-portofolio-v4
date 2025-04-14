@@ -45,6 +45,16 @@ func GetAllProjects(c *gin.Context) {
 	utils.Success(c, "Success fetched data", response)
 }
 
+func GetAllWithSplitQuery(c *gin.Context) {
+	response, err := services.GetAllWithSplitQuery()
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Success(c, "Success fetched data", response)
+}
+
 func GetProject(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

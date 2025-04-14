@@ -27,7 +27,7 @@ func ConnectDB() {
 
 	for attempts := 1; attempts <= maxAttempts; attempts++ {
 		var db *gorm.DB
-		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{SkipDefaultTransaction: true})
 		if err != nil {
 			message := fmt.Sprintf("❌ Attempt %d: Failed to connect to DB: %v", attempts, err)
 			log.Println(message)
